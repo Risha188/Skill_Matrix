@@ -1,18 +1,22 @@
 import React from "react";
-import {NavLink} from "react-router-dom";
+import { NavLink } from "react-router-dom";
 
 const Sidebar = () => {
-    const navLinkClass = ({isActive}) =>
-        `flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-all duration-200 ${isActive
-            ? "bg-blue-600 text-white shadow-md"
-            : "text-white hover:bg-blue-500"
+    const navLinkClass = ({ isActive }) =>
+        `flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-all duration-200 ${
+            isActive
+                ? "bg-blue-600 text-white shadow-md"
+                : "text-white hover:bg-blue-500"
         }`;
 
     return (
-        <aside className="fixed left-0 top-0 z-10 h-screen w-64 bg-blue-400 text-white shadow-xl">
+        <aside className="fixed left-0 top-0 z-10 flex h-screen w-64 flex-col bg-blue-400 text-white shadow-xl">
 
-            {/* Logo */}
-            <div className="flex h-20 shrink-0 items-center gap-3 border-b border-blue-400 px-5">
+            {/* =========================
+                LOGO
+            ========================= */}
+            <div className="flex h-20 shrink-0 items-center gap-3 border-b border-blue-300 px-5">
+
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-lg font-bold text-blue-600 shadow-md">
                     SM
                 </div>
@@ -26,9 +30,12 @@ const Sidebar = () => {
                         Employee Panel
                     </p>
                 </div>
+
             </div>
 
-            {/* Navigation */}
+            {/* =========================
+                NAVIGATION
+            ========================= */}
             <nav className="flex-1 overflow-y-auto px-4 py-6">
 
                 <p className="mb-3 px-3 text-xs font-semibold tracking-widest text-blue-100">
@@ -94,16 +101,21 @@ const Sidebar = () => {
                     </NavLink>
 
                 </div>
+
             </nav>
 
-            {/* Logout */}
-            <div className="shrink-0 border-t border-blue-400 p-4">
+            {/* =========================
+                LOGOUT
+            ========================= */}
+            <div className="shrink-0 border-t border-blue-300 p-4">
+
                 <button
                     type="button"
                     className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-white transition hover:bg-blue-700"
                 >
                     <span>Logout</span>
                 </button>
+
             </div>
 
         </aside>
