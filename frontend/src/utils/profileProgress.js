@@ -28,11 +28,6 @@ export const PROFILE_SECTIONS = [
         name: "BDM Details",
         key: "bdm",
         path: "/employee/bdm",
-    },
-    {
-        name: "Declaration",
-        key: "declaration",
-        path: "/employee/declaration",
     }
 ]
 

@@ -1,11 +1,10 @@
-import {RouterProvider} from 'react-router-dom'
-import router from './router/AppRouter.jsx';
-import './index.css'
-import React from 'react'
-const App = () => {
-  return (
-    <RouterProvider router={router} />
-  )
-}
+import { RouterProvider } from "react-router-dom";
+import AdminRouter from "./router/AdminRouter.jsx";
 
-export default App
+import "./index.css";
+
+const App = () => {
+    return <RouterProvider router={AdminRouter} />;
+};
+
+export default App;

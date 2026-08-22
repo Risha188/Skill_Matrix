@@ -1,100 +1,100 @@
-// import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState } from "react";
 
-// const EmployeeProfileContext = createContext();
+const EmployeeProfileContext = createContext();
 
-// export const EmployeeProfileProvider = ({ children }) => {
+export const EmployeeProfileProvider = ({ children }) => {
 
-//     const [profile, setProfile] = useState({
-//         personalDetails: {
-//             firstName: "",
-//             lastName: "",
-//             email: "",
-//             phone: "",
-//             alternatePhone: "",
-//             dateOfBirth: "",
-//             gender: "",
-//         },
+    const [profile, setProfile] = useState({
+        personalDetails: {
+            firstName: "",
+            lastName: "",
+            email: "",
+            phone: "",
+            alternatePhone: "",
+            dateOfBirth: "",
+            gender: "",
+        },
 
-//         education: {
-//             highestQualification: "",
-//             course: "",
-//             specialization: "",
-//             university: "",
-//             college: "",
-//             passingYear: "",
-//             percentage: "",
-//             cgpa: "",
-//         },
+        education: {
+            highestQualification: "",
+            course: "",
+            specialization: "",
+            university: "",
+            college: "",
+            passingYear: "",
+            percentage: "",
+            cgpa: "",
+        },
 
-//         address: {},
+        address: {},
 
-//         skills: [],
+        skills: [],
 
-//         workExperience: [],
+        workExperience: [],
 
-//         bdmDetails: {},
+        bdmDetails: {},
 
-//     });
+    });
 
-//     const updateSection = (section, data) => {
+    const updateSection = (section, data) => {
 
-//         setProfile((prev) => ({
-//             ...prev,
-//             [section]: data,
-//         }));
+        setProfile((prev) => ({
+            ...prev,
+            [section]: data,
+        }));
 
-//     };
+    };
 
-//     const clearProfile = () => {
+    const clearProfile = () => {
 
-//         setProfile({
-//             personalDetails: {
-//                 firstName: "",
-//                 lastName: "",
-//                 email: "",
-//                 phone: "",
-//                 alternatePhone: "",
-//                 dateOfBirth: "",
-//                 gender: "",
-//             },
+        setProfile({
+            personalDetails: {
+                firstName: "",
+                lastName: "",
+                email: "",
+                phone: "",
+                alternatePhone: "",
+                dateOfBirth: "",
+                gender: "",
+            },
 
-//             education: {
-//                 highestQualification: "",
-//                 course: "",
-//                 specialization: "",
-//                 university: "",
-//                 college: "",
-//                 passingYear: "",
-//                 percentage: "",
-//                 cgpa: "",
-//             },
+            education: {
+                highestQualification: "",
+                course: "",
+                specialization: "",
+                university: "",
+                college: "",
+                passingYear: "",
+                percentage: "",
+                cgpa: "",
+            },
 
-//             address: {},
+            address: {},
 
-//             skills: [],
+            skills: [],
 
-//             workExperience: [],
+            workExperience: [],
 
-//             bdmDetails: {},
-//         });
+            bdmDetails: {},
+        });
 
-//     };
+    };
 
-//     return (
-//         <EmployeeProfileContext.Provider
-//             value={{
-//                 profile,
-//                 updateSection,
-//                 clearProfile,
-//             }}
-//         >
-//             {children}
-//         </EmployeeProfileContext.Provider>
-//     );
-// };
+    return (
+        <EmployeeProfileContext.Provider
+            value={{
+                profile,
+                updateSection,
+                clearProfile,
+            }}
+        >
+            {children}
+        </EmployeeProfileContext.Provider>
+    );
+};
 
-// // export const useEmployeeProfile = () => {
+export const useEmployeeProfile = () => {
 
-// //     return useContext(EmployeeProfileContext);
+    return useContext(EmployeeProfileContext);
 
-// // };
+};

@@ -13,7 +13,6 @@ import Education from "../pages/employee/Education.jsx";
 import Address from "../pages/employee/Address.jsx";
 import Skills from "../pages/employee/Skills.jsx";
 import WorkExperience from "../pages/employee/WorkExperience.jsx";
-import Declaration from "../pages/employee/Declaration.jsx";
 import BDM from "../pages/employee/BDM.jsx";
 import Dashboard from "../pages/employee/Dashboard.jsx";
 
@@ -69,11 +68,6 @@ const router = createBrowserRouter(
                 <Route
                     path="bdm"
                     element={<BDM />}
-                />
-
-                <Route
-                    path="declaration"
-                    element={<Declaration />}
                 />
             </Route>
         </>

@@ -1,21 +1,16 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { markSectionCompleted } from "../../utils/profileProgress";
+import { useEmployeeProfile } from "../../context/EmployeeProfileContext";
 
 const PersonalInformation = () => {
     const navigate = useNavigate();
-    const initialFormData = {
-        employeeId: "",
-        firstName: "",
-        lastName: "",
-        email: "",
-        phone: "",
-        alternatePhone: "",
-        dateOfBirth: "",
-        gender: "",
-    };
 
-    const [formData, setFormData] = useState(initialFormData);
+    const { profile, updateSection } = useEmployeeProfile();
+
+    const [formData, setFormData] = useState(profile.personalDetails);
+
+    const [errors, setErrors] = useState({});
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -24,23 +19,226 @@ const PersonalInformation = () => {
             ...prev,
             [name]: value,
         }));
+
+        //remove error while user is typing
+        setErrors((prev) => ({
+            ...prev,
+            [name]: "",
+        }));
     };
 
-    const handleSubmit = (e) => {
+     // FORM VALIDATION
+    // =========================
+    const validateForm = () => {
+        const newErrors = {};
+
+        // -------------------------
+        // FIRST NAME
+        // -------------------------
+        const firstName = formData.firstName?.trim();
+
+        if (!firstName) {
+            newErrors.firstName = "First name is required";
+        } else if (firstName.length < 2) {
+            newErrors.firstName = "First name must be at least 2 characters";
+        } else if (firstName.length > 50) {
+            newErrors.firstName = "First name cannot exceed 50 characters";
+        } else if (!/^[A-Za-z\s]+$/.test(firstName)) {
+            newErrors.firstName =
+                "First name can contain only letters";
+        }
+
+        // -------------------------
+        // LAST NAME
+        // -------------------------
+        const lastName = formData.lastName?.trim();
+
+        if (!lastName) {
+            newErrors.lastName = "Last name is required";
+        } else if (lastName.length < 2) {
+            newErrors.lastName = "Last name must be at least 2 characters";
+        } else if (lastName.length > 50) {
+            newErrors.lastName = "Last name cannot exceed 50 characters";
+        } else if (!/^[A-Za-z\s]+$/.test(lastName)) {
+            newErrors.lastName =
+                "Last name can contain only letters";
+        }
+
+        // -------------------------
+        // EMAIL
+        // -------------------------
+        const email = formData.email?.trim();
+
+        if (!email) {
+            newErrors.email = "Email address is required";
+        } else if (
+            !/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(email)
+        ) {
+            newErrors.email = "Enter a valid email address";
+        } else if (email.length > 100) {
+            newErrors.email = "Email cannot exceed 100 characters";
+        }
+
+        // -------------------------
+        // PHONE
+        // -------------------------
+        const phone = formData.phone?.trim();
+
+        if (!phone) {
+            newErrors.phone = "Phone number is required";
+        } else if (!/^[0-9]{10}$/.test(phone)) {
+            newErrors.phone =
+                "Phone number must contain exactly 10 digits";
+        } else if (!/^[6-9]/.test(phone)) {
+            newErrors.phone =
+                "Enter a valid Indian mobile number";
+        }
+
+        // -------------------------
+        // ALTERNATE PHONE
+        // -------------------------
+        const alternatePhone = formData.alternatePhone?.trim();
+
+        if (alternatePhone) {
+            if (!/^[0-9]{10}$/.test(alternatePhone)) {
+                newErrors.alternatePhone =
+                    "Alternate phone must contain exactly 10 digits";
+            } else if (!/^[6-9]/.test(alternatePhone)) {
+                newErrors.alternatePhone =
+                    "Enter a valid Indian mobile number";
+            } else if (alternatePhone === phone) {
+                newErrors.alternatePhone =
+                    "Alternate phone cannot be the same as phone number";
+            }
+        }
+
+        // -------------------------
+        // DATE OF BIRTH
+        // -------------------------
+        const dob = formData.dateOfBirth;
+
+        if (!dob) {
+            newErrors.dateOfBirth = "Date of birth is required";
+        } else {
+            const selectedDate = new Date(dob);
+            const today = new Date();
+
+            // Remove time
+            today.setHours(0, 0, 0, 0);
+
+            if (selectedDate > today) {
+                newErrors.dateOfBirth =
+                    "Date of birth cannot be in the future";
+            }
+
+            // Calculate age
+            let age =
+                today.getFullYear() -
+                selectedDate.getFullYear();
+
+            const monthDifference =
+                today.getMonth() -
+                selectedDate.getMonth();
+
+            if (
+                monthDifference < 0 ||
+                (monthDifference === 0 &&
+                    today.getDate() < selectedDate.getDate())
+            ) {
+                age--;
+            }
+
+            if (age < 18) {
+                newErrors.dateOfBirth =
+                    "Employee must be at least 18 years old";
+            }
+
+            if (age > 100) {
+                newErrors.dateOfBirth =
+                    "Please enter a valid date of birth";
+            }
+        }
+
+        // -------------------------
+        // GENDER
+        // -------------------------
+        if (!formData.gender) {
+            newErrors.gender = "Please select gender";
+        }
+
+        setErrors(newErrors);
+
+        return Object.keys(newErrors).length === 0;
+    };
+
+    const handleSubmit = async(e) => {
         e.preventDefault();
 
-        console.log("Personal Information:", formData);
-        markSectionCompleted("personal");
-        localStorage.setItem("employeePersonalInfo", JSON.stringify(formData));
-        navigate("/employee/education");
+        // Validate before API call
+        const isValid = validateForm();
+
+        if (!isValid) {
+            return;
+        }
+
+        try {
+            const response = await API.post(
+                "/employees",
+                {
+                    ...formData,
+                }
+            );
+
+            console.log("Employee saved:", response.data);
+
+            // Store employee ID
+            localStorage.setItem(
+                "employeeId",
+                response.data.employee.employeeId
+            );
+
+            // Store personal details in Context
+            updateSection(
+                "personalDetails",
+                formData
+            );
+
+            markSectionCompleted("personal");
+
+            navigate("/employee/education");
+
+        } catch (error) {
+            console.error(
+                "Error saving employee:",
+                error
+            );
+
+            alert(
+                error.response?.data?.message ||
+                "Failed to save personal information"
+            );
+        }
     };
 
     const handleClear = () => {
-        setFormData(initialFormData);
+         setFormData({
+            firstName: "",
+            lastName: "",
+            email: "",
+            phone: "",
+            alternatePhone: "",
+            dateOfBirth: "",
+            gender: "",
+        });
+
+        setErrors({});
     };
 
     const inputClass =
         "w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-700 placeholder-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100";
+
+    const errorInputClass =
+        "w-full rounded-lg border border-red-500 bg-white px-4 py-3 text-sm text-gray-700 placeholder-gray-400 outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-100";
 
     const labelClass =
         "mb-2 block text-sm font-semibold text-gray-700";

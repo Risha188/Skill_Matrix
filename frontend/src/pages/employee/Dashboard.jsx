@@ -1,37 +1,55 @@
-import {useEffect,useState} from "react";
-import {NavLink} from "react-router-dom";
-import {PROFILE_SECTIONS,getCompletedSections} from "../../utils/profileProgress.js";
+import { useEffect, useState } from "react";
+import { NavLink } from "react-router-dom";
+import {
+    PROFILE_SECTIONS,
+    getCompletedSections
+} from "../../utils/profileProgress.js";
 
 const Dashboard = () => {
-    const [completedSections,setCompletedSections] = useState([]);
-    const [employeeName, setEmployeName] = useState("Employee");
+
+    const [completedSections, setCompletedSections] = useState([]);
+
+    // Load completed sections
+    const loadProgress = () => {
+        const completed = getCompletedSections();
+        setCompletedSections(completed);
+    };
 
     useEffect(() => {
-        const completed = getCompletedSections();
 
-        setCompletedSections(completed);
+        loadProgress();
 
-        const employeeData = JSON.parse(localStorage.getItem("employeePersonalInfo"));
+        // Update dashboard when another page completes a section
+        window.addEventListener(
+            "profileProgressUpdated",
+            loadProgress
+        );
 
-        if(employeeData){
-            const fullName = `${employeeData.firstName || ""} ${employeeData.lastName || ""}`.trim();
-            setEmployeName(fullName || "Employee");
-        }
-    },[]);
+        return () => {
+            window.removeEventListener(
+                "profileProgressUpdated",
+                loadProgress
+            );
+        };
 
+    }, []);
 
-    const completedCount = PROFILE_SECTIONS.filter((section) =>
-        completedSections.includes(section.key)
+    const completedCount = PROFILE_SECTIONS.filter(
+        (section) =>
+            completedSections.includes(section.key)
     ).length;
 
     const totalSections = PROFILE_SECTIONS.length;
 
-    const remainingCount = totalSections - completedCount;
+    const remainingCount =
+        totalSections - completedCount;
 
-
-    const completionPercentage = Math.round(
-        (completedCount / totalSections) * 100
-    );
+    const completionPercentage =
+        totalSections === 0
+            ? 0
+            : Math.round(
+                (completedCount / totalSections) * 100
+            );
 
     return (
         <div className="min-h-screen bg-gray-50 px-6 py-8">
@@ -46,29 +64,23 @@ const Dashboard = () => {
                     </h1>
 
                     <p className="mt-1 text-sm text-gray-500">
-                        Manage your employee profile and keep your information
-                        up to date.
+                        Manage your employee profile and keep your
+                        information up to date.
                     </p>
 
                 </div>
 
-                {/* Welcome Card */}
-                <div className="mb-6 rounded-xl bg-sky-600 p-6 text-white shadow-md">
+                {/* Welcome */}
+                <div className="mb-6 rounded-xl bg-blue-500 p-6 text-white shadow-md">
 
-                    <div className="flex flex-col justify-between gap-5 md:flex-row md:items-center">
+                    <h2 className="text-2xl font-bold">
+                        Welcome, Parna Das 👋
+                    </h2>
 
-                        <div>
-                            <h2 className="text-2xl font-bold">
-                                Welcome, {employeeName}
-                            </h2>
-
-                            <p className="mt-2 text-sm text-blue-100">
-                                Complete your employee profile to make sure
-                                all your information is available.
-                            </p>
-                        </div>
-
-                    </div>
+                    <p className="mt-2 text-sm text-blue-100">
+                        Complete your employee profile to make sure
+                        all your information is available.
+                    </p>
 
                 </div>
 
@@ -78,40 +90,44 @@ const Dashboard = () => {
                     <div className="mb-4 flex items-center justify-between">
 
                         <div>
+
                             <h2 className="text-lg font-semibold text-gray-800">
                                 Profile Completion
                             </h2>
 
                             <p className="mt-1 text-sm text-gray-500">
-                                {completedCount} of {totalSections} sections
-                                completed
+                                {completedCount} of {totalSections} sections completed
                             </p>
+
                         </div>
 
-                        <span className="text-xl font-bold text-sky-600">
+                        <span className="text-xl font-bold text-blue-600">
                             {completionPercentage}%
                         </span>
 
                     </div>
 
-                    {/* Progress Bar */}
+                    {/* Dynamic Progress Bar */}
                     <div className="h-3 w-full overflow-hidden rounded-full bg-gray-200">
 
                         <div
-                            className="h-full rounded-full bg-sky-600 transition-all duration-500"
+                            className="h-full rounded-full bg-blue-600 transition-all duration-700 ease-out"
                             style={{
-                                width: `${completionPercentage}%`,
+                                width: `${completionPercentage}%`
                             }}
                         />
 
                     </div>
 
-                    {/* Completion Message */}
                     <p className="mt-3 text-sm text-gray-500">
+
                         {completionPercentage === 100
                             ? "Your profile is complete! 🎉"
-                            : "Complete the remaining sections to finish your profile."
+                            : `You have ${remainingCount} section${
+                                remainingCount !== 1 ? "s" : ""
+                              } remaining.`
                         }
+
                     </p>
 
                 </div>
@@ -129,6 +145,7 @@ const Dashboard = () => {
                             </div>
 
                             <div>
+
                                 <p className="text-sm text-gray-500">
                                     Completed
                                 </p>
@@ -136,6 +153,7 @@ const Dashboard = () => {
                                 <h3 className="text-2xl font-bold text-gray-800">
                                     {completedCount}
                                 </h3>
+
                             </div>
 
                         </div>
@@ -152,6 +170,7 @@ const Dashboard = () => {
                             </div>
 
                             <div>
+
                                 <p className="text-sm text-gray-500">
                                     Remaining
                                 </p>
@@ -159,6 +178,7 @@ const Dashboard = () => {
                                 <h3 className="text-2xl font-bold text-gray-800">
                                     {remainingCount}
                                 </h3>
+
                             </div>
 
                         </div>
@@ -175,6 +195,7 @@ const Dashboard = () => {
                             </div>
 
                             <div>
+
                                 <p className="text-sm text-gray-500">
                                     Completion
                                 </p>
@@ -182,6 +203,7 @@ const Dashboard = () => {
                                 <h3 className="text-2xl font-bold text-gray-800">
                                     {completionPercentage}%
                                 </h3>
+
                             </div>
 
                         </div>
@@ -200,7 +222,7 @@ const Dashboard = () => {
                         </h2>
 
                         <p className="mt-1 text-sm text-gray-500">
-                            Complete all sections of your employee profile.
+                            Complete or edit your employee profile sections.
                         </p>
 
                     </div>
@@ -208,47 +230,72 @@ const Dashboard = () => {
                     <div className="divide-y divide-gray-100">
 
                         {PROFILE_SECTIONS.map((section) => {
-                            const isCompleted = completedSections.includes(section.key);
+
+                            const isCompleted =
+                                completedSections.includes(section.key);
+
                             return (
 
                                 <div
-                                    key={section.name}
+                                    key={section.key}
                                     className="flex items-center justify-between px-6 py-4 transition hover:bg-gray-50"
                                 >
 
                                     <div className="flex items-center gap-4">
 
+                                        {/* Status Icon */}
+                                        <div
+                                            className={`flex h-10 w-10 items-center justify-center rounded-full ${
+                                                isCompleted
+                                                    ? "bg-green-100 text-green-600"
+                                                    : "bg-gray-100 text-gray-400"
+                                            }`}
+                                        >
+                                            {isCompleted ? "✓" : "○"}
+                                        </div>
+
                                         <div>
+
                                             <h3 className="text-sm font-semibold text-gray-800">
                                                 {section.name}
                                             </h3>
 
                                             <p
-                                                className={`mt-1 text-xs font-medium ${section.completed
-                                                    ? "text-green-600"
-                                                    : "text-gray-400"
-                                                    }`}
+                                                className={`mt-1 text-xs font-medium ${
+                                                    isCompleted
+                                                        ? "text-green-600"
+                                                        : "text-gray-400"
+                                                }`}
                                             >
-                                                {section.completed
+                                                {isCompleted
                                                     ? "Completed"
-                                                    : "Not completed"}
+                                                    : "Not completed"
+                                                }
                                             </p>
+
                                         </div>
 
                                     </div>
 
+                                    {/* Complete / Edit */}
                                     <NavLink
                                         to={section.path}
-                                        className={`rounded-lg px-4 py-2 text-sm font-medium transition ${isCompleted
-                                            ? "border border-gray-300 text-gray-600 hover:bg-gray-100"
-                                            : "bg-sky-600 text-white hover:bg-sky-700"
-                                            }`}
+                                        className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+                                            isCompleted
+                                                ? "border border-gray-300 text-gray-600 hover:bg-gray-100"
+                                                : "bg-blue-600 text-white hover:bg-blue-700"
+                                        }`}
                                     >
-                                        {isCompleted ? "Edit" : "Complete"}
+                                        {isCompleted
+                                            ? "Edit"
+                                            : "Complete"
+                                        }
                                     </NavLink>
 
                                 </div>
-                            )
+
+                            );
+
                         })}
 
                     </div>

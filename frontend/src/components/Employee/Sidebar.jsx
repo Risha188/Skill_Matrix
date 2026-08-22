@@ -86,13 +86,6 @@ const Sidebar = () => {
                         <span>BDM Details</span>
                     </NavLink>
 
-                    <NavLink
-                        to="/employee/declaration"
-                        className={navLinkClass}
-                    >
-                        <span>Declaration</span>
-                    </NavLink>
-
                 </div>
             </nav>
 
