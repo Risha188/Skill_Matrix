@@ -157,7 +157,7 @@ const Sidebar = () => {
                     px-3
                     py-6
 
-                    [scrollbar-width:none]
+                    [scrollbar-none]
                     [-ms-overflow-style:none]
                     [&::-webkit-scrollbar]:hidden
                 "
