@@ -1431,7 +1431,7 @@ const AllProjects = () => {
 
                 <div className="overflow-x-auto">
 
-                    <table className="w-full min-w-[1000px] text-left">
+                    <table className="w-full min-w-250 text-left">
 
                         {/* HEADER */}
 
