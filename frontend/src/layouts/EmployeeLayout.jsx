@@ -1,21 +1,23 @@
 import { useEffect, useState } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 
 import Sidebar from "../components/Employee/Sidebar";
 
 const EmployeeLayout = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+    const location = useLocation();
+
     // =========================================================
-    // CLOSE SIDEBAR WHEN ROUTE CHANGES
+    // CLOSE MOBILE SIDEBAR WHEN ROUTE CHANGES
     // =========================================================
 
     useEffect(() => {
         setIsSidebarOpen(false);
-    }, []);
+    }, [location.pathname]);
 
     // =========================================================
-    // CLOSE SIDEBAR WHEN SCREEN BECOMES DESKTOP
+    // CLOSE MOBILE SIDEBAR ON DESKTOP
     // =========================================================
 
     useEffect(() => {
@@ -28,10 +30,7 @@ const EmployeeLayout = () => {
         window.addEventListener("resize", handleResize);
 
         return () => {
-            window.removeEventListener(
-                "resize",
-                handleResize
-            );
+            window.removeEventListener("resize", handleResize);
         };
     }, []);
 
@@ -40,10 +39,7 @@ const EmployeeLayout = () => {
     // =========================================================
 
     useEffect(() => {
-        if (
-            isSidebarOpen &&
-            window.innerWidth < 1024
-        ) {
+        if (isSidebarOpen && window.innerWidth < 1024) {
             document.body.style.overflow = "hidden";
         } else {
             document.body.style.overflow = "";
@@ -55,7 +51,7 @@ const EmployeeLayout = () => {
     }, [isSidebarOpen]);
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen w-full bg-gray-50">
 
             {/* =================================================
                 MOBILE OVERLAY
@@ -65,11 +61,12 @@ const EmployeeLayout = () => {
                 <button
                     type="button"
                     aria-label="Close employee menu"
-                    onClick={() =>
-                        setIsSidebarOpen(false)
-                    }
+                    onClick={() => setIsSidebarOpen(false)}
                     className="
-                        fixed inset-0 z-40
+                        fixed
+                        inset-0
+                        z-40
+                        cursor-default
                         bg-black/50
                         backdrop-blur-[2px]
                         lg:hidden
@@ -90,12 +87,15 @@ const EmployeeLayout = () => {
                     hidden
                     h-screen
                     w-64
+                    border-r
+                    border-gray-200
                     bg-white
-                    shadow-xl
                     lg:block
                 "
             >
-                <Sidebar />
+                <div className="h-full w-full overflow-y-auto">
+                    <Sidebar />
+                </div>
             </aside>
 
             {/* =================================================
@@ -123,15 +123,13 @@ const EmployeeLayout = () => {
                     }
                 `}
             >
-                <div className="relative h-full">
+                <div className="relative h-full w-full overflow-y-auto">
 
-                    {/* MOBILE CLOSE BUTTON */}
+                    {/* CLOSE BUTTON */}
 
                     <button
                         type="button"
-                        onClick={() =>
-                            setIsSidebarOpen(false)
-                        }
+                        onClick={() => setIsSidebarOpen(false)}
                         aria-label="Close menu"
                         className="
                             absolute
@@ -174,13 +172,20 @@ const EmployeeLayout = () => {
             </aside>
 
             {/* =================================================
-                EMPLOYEE CONTENT
+                MAIN AREA
             ================================================= */}
 
-            <main className="min-h-screen lg:pl-64">
+            <main
+                className="
+                    min-h-screen
+                    w-full
+                    lg:ml-64
+                    lg:w-auto
+                "
+            >
 
                 {/* =================================================
-                    MOBILE TOP BAR
+                    MOBILE HEADER
                 ================================================= */}
 
                 <header
@@ -190,31 +195,29 @@ const EmployeeLayout = () => {
                         z-30
                         flex
                         h-16
+                        w-full
                         items-center
-                        justify-between
                         border-b
                         border-gray-200
-                        bg-white/95
+                        bg-white
                         px-4
                         shadow-sm
-                        backdrop-blur
                         sm:px-6
                         lg:hidden
                     "
                 >
 
-                    {/* MENU BUTTON */}
+                    {/* LEFT MENU BUTTON */}
 
                     <button
                         type="button"
-                        onClick={() =>
-                            setIsSidebarOpen(true)
-                        }
+                        onClick={() => setIsSidebarOpen(true)}
                         aria-label="Open employee menu"
                         className="
                             flex
                             h-10
                             w-10
+                            shrink-0
                             items-center
                             justify-center
                             rounded-xl
@@ -242,9 +245,10 @@ const EmployeeLayout = () => {
                         </svg>
                     </button>
 
-                    {/* TITLE */}
+                    {/* CENTER TITLE */}
 
-                    <div className="min-w-0 flex-1 px-3 text-center">
+                    <div className="min-w-0 flex-1 text-center">
+
                         <h1 className="truncate text-base font-bold text-gray-900 sm:text-lg">
                             Employee Panel
                         </h1>
@@ -252,11 +256,12 @@ const EmployeeLayout = () => {
                         <p className="hidden text-xs text-gray-500 sm:block">
                             SkillMatrix
                         </p>
+
                     </div>
 
-                    {/* RIGHT SPACE */}
+                    {/* RIGHT BALANCING SPACE */}
 
-                    <div className="h-10 w-10" />
+                    <div className="h-10 w-10 shrink-0" />
 
                 </header>
 
@@ -264,18 +269,28 @@ const EmployeeLayout = () => {
                     PAGE CONTENT
                 ================================================= */}
 
-                <div
+                <section
                     className="
                         w-full
-                        overflow-x-hidden
-                        p-4
-                        sm:p-5
-                        md:p-6
-                        lg:p-8
+                        px-4
+                        py-6
+                        sm:px-6
+                        sm:py-8
+                        lg:px-8
+                        lg:py-8
+                        xl:px-10
                     "
                 >
-                    <Outlet />
-                </div>
+                    <div
+                        className="
+                            mx-auto
+                            w-full
+                            max-w-7xl
+                        "
+                    >
+                        <Outlet />
+                    </div>
+                </section>
 
             </main>
 

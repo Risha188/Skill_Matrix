@@ -102,7 +102,7 @@ const AdminSidebar = () => {
                 min-h-0
                 w-full
                 flex-col
-                bg-slate-950
+                bg-sky-500
                 text-white
             "
         >
@@ -119,7 +119,7 @@ const AdminSidebar = () => {
                     items-center
                     gap-3
                     border-b
-                    border-slate-800
+                    border-sky-100
                     px-5
                 "
             >

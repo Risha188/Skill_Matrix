@@ -46,10 +46,7 @@ const AdminLayout = () => {
         window.addEventListener("resize", handleResize);
 
         return () => {
-            window.removeEventListener(
-                "resize",
-                handleResize
-            );
+            window.removeEventListener("resize", handleResize);
         };
     }, []);
 
@@ -278,16 +275,16 @@ const AdminLayout = () => {
         ${
             isActive
                 ? `
-                    bg-blue-600
-                    text-white
+                    bg-white
+                    text-sky-800
                     shadow-lg
-                    shadow-blue-900/20
-                  `
+                    shadow-sky-950/20
+                `
                 : `
-                    text-slate-300
-                    hover:bg-slate-800
+                    text-sky-50
+                    hover:bg-sky-600
                     hover:text-white
-                  `
+                `
         }
         `;
 
@@ -310,15 +307,15 @@ const AdminLayout = () => {
         ${
             isActive
                 ? `
-                    bg-white/15
-                    text-white
-                  `
+                    bg-sky-100
+                    text-sky-700
+                `
                 : `
-                    bg-slate-800
-                    text-slate-400
-                    group-hover:bg-slate-700
+                    bg-sky-800/70
+                    text-sky-100
+                    group-hover:bg-sky-500
                     group-hover:text-white
-                  `
+                `
         }
         `;
 
@@ -341,7 +338,7 @@ const AdminLayout = () => {
                     items-center
                     justify-between
                     border-b
-                    border-slate-800
+                    border-sky-600
                     px-5
                 "
             >
@@ -359,13 +356,13 @@ const AdminLayout = () => {
                             items-center
                             justify-center
                             rounded-xl
-                            bg-blue-600
+                            bg-white
                             text-sm
                             font-bold
                             tracking-wide
-                            text-white
+                            text-sky-700
                             shadow-lg
-                            shadow-blue-900/30
+                            shadow-sky-950/20
                         "
                     >
                         SM
@@ -391,7 +388,7 @@ const AdminLayout = () => {
                             className="
                                 mt-0.5
                                 text-xs
-                                text-slate-400
+                                text-sky-100
                             "
                         >
                             Admin Portal
@@ -417,9 +414,9 @@ const AdminLayout = () => {
                         items-center
                         justify-center
                         rounded-lg
-                        text-slate-400
+                        text-sky-100
                         transition
-                        hover:bg-slate-800
+                        hover:bg-sky-600
                         hover:text-white
                         lg:hidden
                     "
@@ -465,7 +462,7 @@ const AdminLayout = () => {
                             font-semibold
                             uppercase
                             tracking-[0.18em]
-                            text-slate-500
+                            text-sky-200
                         "
                     >
                         Administration
@@ -522,7 +519,7 @@ const AdminLayout = () => {
                                     font-semibold
                                     uppercase
                                     tracking-[0.18em]
-                                    text-slate-500
+                                    text-sky-200
                                 "
                             >
                                 Project
@@ -645,7 +642,7 @@ const AdminLayout = () => {
                 className="
                     shrink-0
                     border-t
-                    border-slate-800
+                    border-sky-600
                     p-3
                 "
             >
@@ -659,9 +656,12 @@ const AdminLayout = () => {
                         items-center
                         gap-3
                         rounded-xl
-                        bg-slate-900
+                        border
+                        border-sky-400/40
+                        bg-sky-600
                         px-3
                         py-3
+                        shadow-sm
                     "
                 >
 
@@ -674,11 +674,11 @@ const AdminLayout = () => {
                             items-center
                             justify-center
                             rounded-full
-                            bg-blue-600
+                            bg-white
                             text-xs
                             font-bold
                             uppercase
-                            text-white
+                            text-sky-700
                         "
                     >
                         {currentAdmin?.name
@@ -704,7 +704,7 @@ const AdminLayout = () => {
                             className="
                                 truncate
                                 text-xs
-                                text-slate-500
+                                text-sky-100
                             "
                         >
                             {currentAdmin?.isDefault
@@ -732,11 +732,11 @@ const AdminLayout = () => {
                         py-3
                         text-sm
                         font-medium
-                        text-slate-400
+                        text-sky-50
                         transition-all
                         duration-200
-                        hover:bg-red-500/10
-                        hover:text-red-400
+                        hover:bg-red-500
+                        hover:text-white
                     "
                 >
 
@@ -748,11 +748,11 @@ const AdminLayout = () => {
                             items-center
                             justify-center
                             rounded-lg
-                            bg-slate-800
-                            text-slate-400
+                            bg-sky-800/70
+                            text-sky-100
                             transition
-                            group-hover:bg-red-500/10
-                            group-hover:text-red-400
+                            group-hover:bg-red-600
+                            group-hover:text-white
                         "
                     >
                         <svg
@@ -833,7 +833,7 @@ const AdminLayout = () => {
                     h-screen
                     w-64
                     flex-col
-                    bg-slate-950
+                    bg-sky-700
                     text-white
                     shadow-2xl
                     lg:flex
@@ -854,7 +854,7 @@ const AdminLayout = () => {
                     z-50
                     h-screen
                     w-[min(85vw,20rem)]
-                    bg-slate-950
+                    bg-sky-700
                     text-white
                     shadow-2xl
                     transition-transform
@@ -915,11 +915,11 @@ const AdminLayout = () => {
                             items-center
                             justify-center
                             rounded-xl
-                            bg-slate-900
+                            bg-sky-700
                             text-white
                             shadow-sm
                             transition
-                            hover:bg-slate-800
+                            hover:bg-sky-800
                             active:scale-95
                         "
                         aria-label="Open menu"

@@ -10,30 +10,13 @@ const DELETED_PROJECTS_KEY = "deletedProjectIds";
 // =========================================================
 // GET PROJECT STATUS FROM DATES
 // =========================================================
-//
-// Pending   = Project has not started yet
-// Active    = Project has started and end date has not passed
-// Completed = Project end date has passed
-//
-// Example:
-//
-// Start: 2026-08-20
-// End:   2026-08-30
-//
-// Before Aug 20  -> Pending
-// Aug 20-Aug 30  -> Active
-// After Aug 30   -> Completed
-//
-// =========================================================
 
 const getProjectStatus = (startDate, endDate) => {
     if (!startDate || !endDate) {
         return "Pending";
     }
 
-    // Use local date instead of UTC to avoid timezone issues.
     const today = new Date();
-
     today.setHours(0, 0, 0, 0);
 
     const start = new Date(`${startDate}T00:00:00`);
@@ -47,30 +30,25 @@ const getProjectStatus = (startDate, endDate) => {
         return "Pending";
     }
 
-    // Project has not started
     if (today < start) {
         return "Pending";
     }
 
-    // Project is currently running
     if (today <= end) {
         return "Active";
     }
 
-    // Project end date has passed
     return "Completed";
 };
 
 // =========================================================
-// GET STORED PROJECTS
+// GET DELETED PROJECT IDS
 // =========================================================
 
 const getDeletedProjectIds = () => {
     try {
         const storedDeletedProjects =
-            localStorage.getItem(
-                DELETED_PROJECTS_KEY
-            );
+            localStorage.getItem(DELETED_PROJECTS_KEY);
 
         if (!storedDeletedProjects) {
             return [];
@@ -99,9 +77,7 @@ const getDeletedProjectIds = () => {
 const buildProjects = () => {
     try {
         const storedProjects =
-            localStorage.getItem(
-                PROJECT_STORAGE_KEY
-            );
+            localStorage.getItem(PROJECT_STORAGE_KEY);
 
         const deletedProjectIds =
             getDeletedProjectIds();
@@ -140,12 +116,8 @@ const buildProjects = () => {
                     const storedProject =
                         parsedProjects.find(
                             (storedItem) =>
-                                String(
-                                    storedItem.id
-                                ) ===
-                                String(
-                                    masterProject.id
-                                )
+                                String(storedItem.id) ===
+                                String(masterProject.id)
                         );
 
                     const employeeIds =
@@ -165,7 +137,6 @@ const buildProjects = () => {
 
                     return {
                         ...masterProject,
-
                         ...storedProject,
 
                         employeeIds: [
@@ -173,11 +144,8 @@ const buildProjects = () => {
                         ],
 
                         startDate,
-
                         endDate,
 
-                        // IMPORTANT:
-                        // Status is ALWAYS calculated from dates.
                         status: getProjectStatus(
                             startDate,
                             endDate
@@ -243,20 +211,17 @@ const buildProjects = () => {
 
 const EmployeeItem = ({ employee }) => {
     const firstName =
-        employee.personalDetails?.firstName ||
-        "";
+        employee.personalDetails?.firstName || "";
 
     const lastName =
-        employee.personalDetails?.lastName ||
-        "";
+        employee.personalDetails?.lastName || "";
 
     const fullName =
         `${firstName} ${lastName}`.trim();
 
     const initials =
-        `${firstName[0] || ""}${
-            lastName[0] || ""
-        }`.toUpperCase();
+        `${firstName[0] || ""}${lastName[0] || ""}`
+            .toUpperCase();
 
     return (
         <div className="flex items-center gap-2">
@@ -310,22 +275,27 @@ const AllProjects = () => {
         setExpandedProjects,
     ] = useState([]);
 
+    // =========================================================
+    // CREATE PROJECT FORM
+    // =========================================================
+
     const [formData, setFormData] = useState({
         projectName: "",
         projectCode: "",
+        description: "",
+        technologies: "",
+        client: "",
+        projectType: "",
+        priority: "",
         employeeIds: [],
         startDate: "",
         endDate: "",
+        duration: "",
+        objectives: "",
     });
 
     // =========================================================
-    // REFRESH PROJECT STATUS
-    // =========================================================
-    //
-    // This is important because the status depends on today's
-    // date. When the application remains open across midnight,
-    // the status will still update.
-    //
+    // REFRESH PROJECTS
     // =========================================================
 
     const refreshProjects = () => {
@@ -340,29 +310,6 @@ const AllProjects = () => {
     // =========================================================
 
     useEffect(() => {
-        if (!projects.length) {
-            const deletedProjectIds =
-                getDeletedProjectIds();
-
-            const existingStoredProjects =
-                localStorage.getItem(
-                    PROJECT_STORAGE_KEY
-                );
-
-            // Only write when appropriate.
-            if (
-                existingStoredProjects !==
-                JSON.stringify(projects)
-            ) {
-                localStorage.setItem(
-                    PROJECT_STORAGE_KEY,
-                    JSON.stringify(projects)
-                );
-            }
-
-            return;
-        }
-
         localStorage.setItem(
             PROJECT_STORAGE_KEY,
             JSON.stringify(projects)
@@ -406,12 +353,9 @@ const AllProjects = () => {
     // =========================================================
 
     useEffect(() => {
-        const interval = setInterval(
-            () => {
-                refreshProjects();
-            },
-            60 * 1000
-        );
+        const interval = setInterval(() => {
+            refreshProjects();
+        }, 60 * 1000);
 
         return () => {
             clearInterval(interval);
@@ -497,106 +441,109 @@ const AllProjects = () => {
             return projects;
         }
 
-        return projects.filter(
-            (project) => {
-                const currentStatus =
-                    getProjectStatus(
-                        project.startDate,
-                        project.endDate
-                    );
-
-                // Project name
-                const projectMatch =
-                    project.projectName
-                        ?.toLowerCase()
-                        .includes(
-                            searchValue
-                        );
-
-                // Project code
-                const projectCodeMatch =
-                    project.projectCode
-                        ?.toLowerCase()
-                        .includes(
-                            searchValue
-                        );
-
-                // Project type
-                const projectTypeMatch =
-                    project.projectType
-                        ?.toLowerCase()
-                        .includes(
-                            searchValue
-                        );
-
-                // Priority
-                const priorityMatch =
-                    project.priority
-                        ?.toLowerCase()
-                        .includes(
-                            searchValue
-                        );
-
-                // Status
-                const statusMatch =
-                    currentStatus
-                        .toLowerCase()
-                        .includes(
-                            searchValue
-                        );
-
-                // Employees
-                const projectEmployees =
-                    getProjectEmployees(
-                        project
-                    );
-
-                const employeeMatch =
-                    projectEmployees.some(
-                        (employee) => {
-                            const firstName =
-                                employee
-                                    .personalDetails
-                                    ?.firstName ||
-                                "";
-
-                            const lastName =
-                                employee
-                                    .personalDetails
-                                    ?.lastName ||
-                                "";
-
-                            const fullName =
-                                `${firstName} ${lastName}`
-                                    .toLowerCase();
-
-                            const employeeId =
-                                employee
-                                    .employeeId
-                                    ?.toLowerCase() ||
-                                "";
-
-                            return (
-                                fullName.includes(
-                                    searchValue
-                                ) ||
-                                employeeId.includes(
-                                    searchValue
-                                )
-                            );
-                        }
-                    );
-
-                return (
-                    projectMatch ||
-                    projectCodeMatch ||
-                    projectTypeMatch ||
-                    priorityMatch ||
-                    statusMatch ||
-                    employeeMatch
+        return projects.filter((project) => {
+            const currentStatus =
+                getProjectStatus(
+                    project.startDate,
+                    project.endDate
                 );
-            }
-        );
+
+            const projectMatch =
+                project.projectName
+                    ?.toLowerCase()
+                    .includes(searchValue);
+
+            const projectCodeMatch =
+                project.projectCode
+                    ?.toLowerCase()
+                    .includes(searchValue);
+
+            const projectTypeMatch =
+                project.projectType
+                    ?.toLowerCase()
+                    .includes(searchValue);
+
+            const priorityMatch =
+                project.priority
+                    ?.toLowerCase()
+                    .includes(searchValue);
+
+            const clientMatch =
+                project.client
+                    ?.toLowerCase()
+                    .includes(searchValue);
+
+            const technologyMatch =
+                Array.isArray(project.technologies)
+                    ? project.technologies.some(
+                          (technology) =>
+                              String(technology)
+                                  .toLowerCase()
+                                  .includes(
+                                      searchValue
+                                  )
+                      )
+                    : String(
+                          project.technologies || ""
+                      )
+                          .toLowerCase()
+                          .includes(searchValue);
+
+            const descriptionMatch =
+                project.description
+                    ?.toLowerCase()
+                    .includes(searchValue);
+
+            const statusMatch =
+                currentStatus
+                    .toLowerCase()
+                    .includes(searchValue);
+
+            const projectEmployees =
+                getProjectEmployees(project);
+
+            const employeeMatch =
+                projectEmployees.some(
+                    (employee) => {
+                        const firstName =
+                            employee.personalDetails
+                                ?.firstName || "";
+
+                        const lastName =
+                            employee.personalDetails
+                                ?.lastName || "";
+
+                        const fullName =
+                            `${firstName} ${lastName}`
+                                .toLowerCase();
+
+                        const employeeId =
+                            employee.employeeId
+                                ?.toLowerCase() || "";
+
+                        return (
+                            fullName.includes(
+                                searchValue
+                            ) ||
+                            employeeId.includes(
+                                searchValue
+                            )
+                        );
+                    }
+                );
+
+            return (
+                projectMatch ||
+                projectCodeMatch ||
+                projectTypeMatch ||
+                priorityMatch ||
+                clientMatch ||
+                technologyMatch ||
+                descriptionMatch ||
+                statusMatch ||
+                employeeMatch
+            );
+        });
     }, [projects, search]);
 
     // =========================================================
@@ -609,12 +556,10 @@ const AllProjects = () => {
             value,
         } = e.target;
 
-        setFormData(
-            (previous) => ({
-                ...previous,
-                [name]: value,
-            })
-        );
+        setFormData((previous) => ({
+            ...previous,
+            [name]: value,
+        }));
     };
 
     // =========================================================
@@ -624,30 +569,28 @@ const AllProjects = () => {
     const handleEmployeeSelection = (
         employeeId
     ) => {
-        setFormData(
-            (previous) => {
-                const alreadySelected =
-                    previous.employeeIds.includes(
-                        employeeId
-                    );
+        setFormData((previous) => {
+            const alreadySelected =
+                previous.employeeIds.includes(
+                    employeeId
+                );
 
-                return {
-                    ...previous,
+            return {
+                ...previous,
 
-                    employeeIds:
-                        alreadySelected
-                            ? previous.employeeIds.filter(
-                                  (id) =>
-                                      id !==
-                                      employeeId
-                              )
-                            : [
-                                  ...previous.employeeIds,
-                                  employeeId,
-                              ],
-                };
-            }
-        );
+                employeeIds:
+                    alreadySelected
+                        ? previous.employeeIds.filter(
+                              (id) =>
+                                  id !==
+                                  employeeId
+                          )
+                        : [
+                              ...previous.employeeIds,
+                              employeeId,
+                          ],
+            };
+        });
     };
 
     // =========================================================
@@ -658,14 +601,21 @@ const AllProjects = () => {
         setFormData({
             projectName: "",
             projectCode: "",
+            description: "",
+            technologies: "",
+            client: "",
+            projectType: "",
+            priority: "",
             employeeIds: [],
             startDate: "",
             endDate: "",
+            duration: "",
+            objectives: "",
         });
     };
 
     // =========================================================
-    // ASSIGN NEW PROJECT
+    // ASSIGN / CREATE NEW PROJECT
     // =========================================================
 
     const handleAssignProject = (e) => {
@@ -690,6 +640,66 @@ const AllProjects = () => {
         if (!formData.projectCode.trim()) {
             alert(
                 "Please enter project code."
+            );
+
+            return;
+        }
+
+        // -----------------------------------------------------
+        // DESCRIPTION
+        // -----------------------------------------------------
+
+        if (!formData.description.trim()) {
+            alert(
+                "Please enter project description."
+            );
+
+            return;
+        }
+
+        // -----------------------------------------------------
+        // TECHNOLOGY STACK
+        // -----------------------------------------------------
+
+        if (!formData.technologies.trim()) {
+            alert(
+                "Please enter technology stack."
+            );
+
+            return;
+        }
+
+        // -----------------------------------------------------
+        // CLIENT
+        // -----------------------------------------------------
+
+        if (!formData.client.trim()) {
+            alert(
+                "Please enter client name."
+            );
+
+            return;
+        }
+
+        // -----------------------------------------------------
+        // PROJECT TYPE
+        // -----------------------------------------------------
+
+        if (!formData.projectType) {
+            alert(
+                "Please select project type."
+            );
+
+            return;
+        }
+
+        // -----------------------------------------------------
+        // PRIORITY
+        // -----------------------------------------------------
+
+        if (!formData.priority) {
+            alert(
+                "Please select priority."
             );
 
             return;
@@ -728,6 +738,30 @@ const AllProjects = () => {
         if (!formData.endDate) {
             alert(
                 "Please select end date."
+            );
+
+            return;
+        }
+
+        // -----------------------------------------------------
+        // DURATION
+        // -----------------------------------------------------
+
+        if (!formData.duration.trim()) {
+            alert(
+                "Please enter project duration."
+            );
+
+            return;
+        }
+
+        // -----------------------------------------------------
+        // OBJECTIVES
+        // -----------------------------------------------------
+
+        if (!formData.objectives.trim()) {
+            alert(
+                "Please enter project objectives."
             );
 
             return;
@@ -776,7 +810,7 @@ const AllProjects = () => {
         }
 
         // -----------------------------------------------------
-        // NEW PROJECT STATUS
+        // STATUS
         // -----------------------------------------------------
 
         const calculatedStatus =
@@ -784,6 +818,42 @@ const AllProjects = () => {
                 formData.startDate,
                 formData.endDate
             );
+
+        // -----------------------------------------------------
+        // TECHNOLOGIES
+        // -----------------------------------------------------
+        //
+        // Enter technologies separated by commas.
+        // Example:
+        // React, Node.js, MongoDB, Tailwind CSS
+        //
+        // -----------------------------------------------------
+
+        const technologies =
+            formData.technologies
+                .split(",")
+                .map(
+                    (technology) =>
+                        technology.trim()
+                )
+                .filter(Boolean);
+
+        // -----------------------------------------------------
+        // OBJECTIVES
+        // -----------------------------------------------------
+        //
+        // Enter objectives separated by commas.
+        //
+        // -----------------------------------------------------
+
+        const objectives =
+            formData.objectives
+                .split(",")
+                .map(
+                    (objective) =>
+                        objective.trim()
+                )
+                .filter(Boolean);
 
         // -----------------------------------------------------
         // NEW PROJECT
@@ -801,19 +871,18 @@ const AllProjects = () => {
                     .toUpperCase(),
 
             description:
-                "Newly created project.",
+                formData.description.trim(),
 
-            projectOverview:
-                "Project created from the admin project management panel.",
+            technologies,
 
-            skills: [],
-
-            technologies: [],
+            client:
+                formData.client.trim(),
 
             projectType:
-                "Web Application",
+                formData.projectType,
 
-            priority: "Medium",
+            priority:
+                formData.priority,
 
             employeeIds: [
                 ...formData.employeeIds,
@@ -825,22 +894,13 @@ const AllProjects = () => {
             endDate:
                 formData.endDate,
 
-            // Automatically calculated.
+            duration:
+                formData.duration.trim(),
+
+            objectives,
+
             status:
                 calculatedStatus,
-
-            duration: "Custom",
-
-            client:
-                "Internal Project",
-
-            repository:
-                "Private Repository",
-
-            environment:
-                "Development",
-
-            objectives: [],
         };
 
         // -----------------------------------------------------
@@ -855,7 +915,7 @@ const AllProjects = () => {
         );
 
         // -----------------------------------------------------
-        // RESET
+        // RESET FORM
         // -----------------------------------------------------
 
         resetForm();
@@ -896,11 +956,6 @@ const AllProjects = () => {
 
         // -----------------------------------------------------
         // SAVE DELETED PROJECT ID
-        // -----------------------------------------------------
-        //
-        // This prevents projectDetails from recreating the
-        // deleted project when the application reloads.
-        //
         // -----------------------------------------------------
 
         const deletedProjectIds =
@@ -980,6 +1035,13 @@ const AllProjects = () => {
                 return "bg-yellow-100 text-yellow-700";
         }
     };
+
+    // =========================================================
+    // INPUT CLASS
+    // =========================================================
+
+    const inputClass =
+        "w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500";
 
     // =========================================================
     // RETURN
@@ -1088,7 +1150,7 @@ const AllProjects = () => {
                                 e.target.value
                             )
                         }
-                        className="w-full rounded-lg border border-gray-300 px-4 py-2.5 pr-10 text-sm outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                        className={`${inputClass} pr-10`}
                     />
 
                     <svg
@@ -1141,9 +1203,8 @@ const AllProjects = () => {
                         </h2>
 
                         <p className="mt-1 text-sm text-gray-500">
-                            A minimum of 2 employees
-                            is required for every
-                            project.
+                            Fill in all project details and
+                            assign at least 2 employees.
                         </p>
 
                     </div>
@@ -1155,7 +1216,9 @@ const AllProjects = () => {
                         className="grid grid-cols-1 gap-5 md:grid-cols-2"
                     >
 
-                        {/* PROJECT NAME */}
+                        {/* =================================================
+                            PROJECT NAME
+                        ================================================= */}
 
                         <div>
 
@@ -1173,12 +1236,14 @@ const AllProjects = () => {
                                     handleChange
                                 }
                                 placeholder="Enter project name"
-                                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                className={inputClass}
                             />
 
                         </div>
 
-                        {/* PROJECT CODE */}
+                        {/* =================================================
+                            PROJECT CODE
+                        ================================================= */}
 
                         <div>
 
@@ -1196,12 +1261,220 @@ const AllProjects = () => {
                                     handleChange
                                 }
                                 placeholder="Example: PRJ011"
-                                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm uppercase outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                className={`${inputClass} uppercase`}
                             />
 
                         </div>
 
-                        {/* EMPLOYEES */}
+                        {/* =================================================
+                            DESCRIPTION
+                        ================================================= */}
+
+                        <div className="md:col-span-2">
+
+                            <label className="mb-2 block text-sm font-medium text-gray-700">
+                                Project Description
+                            </label>
+
+                            <textarea
+                                name="description"
+                                value={
+                                    formData.description
+                                }
+                                onChange={
+                                    handleChange
+                                }
+                                placeholder="Enter project description"
+                                rows={4}
+                                className={`${inputClass} resize-none`}
+                            />
+
+                        </div>
+
+                        {/* =================================================
+                            TECHNOLOGY STACK
+                        ================================================= */}
+
+                        <div className="md:col-span-2">
+
+                            <label className="mb-2 block text-sm font-medium text-gray-700">
+                                Technology Stack
+                            </label>
+
+                            <input
+                                type="text"
+                                name="technologies"
+                                value={
+                                    formData.technologies
+                                }
+                                onChange={
+                                    handleChange
+                                }
+                                placeholder="Example: React, Node.js, MongoDB, Tailwind CSS"
+                                className={inputClass}
+                            />
+
+                            <p className="mt-1 text-xs text-gray-400">
+                                Separate technologies with commas.
+                            </p>
+
+                        </div>
+
+                        {/* =================================================
+                            CLIENT
+                        ================================================= */}
+
+                        <div>
+
+                            <label className="mb-2 block text-sm font-medium text-gray-700">
+                                Client
+                            </label>
+
+                            <input
+                                type="text"
+                                name="client"
+                                value={
+                                    formData.client
+                                }
+                                onChange={
+                                    handleChange
+                                }
+                                placeholder="Enter client name"
+                                className={inputClass}
+                            />
+
+                        </div>
+
+                        {/* =================================================
+                            PROJECT TYPE
+                        ================================================= */}
+
+                        <div>
+
+                            <label className="mb-2 block text-sm font-medium text-gray-700">
+                                Project Type
+                            </label>
+
+                            <select
+                                name="projectType"
+                                value={
+                                    formData.projectType
+                                }
+                                onChange={
+                                    handleChange
+                                }
+                                className={inputClass}
+                            >
+
+                                <option value="">
+                                    Select project type
+                                </option>
+
+                                <option value="Web Application">
+                                    Web Application
+                                </option>
+
+                                <option value="Mobile Application">
+                                    Mobile Application
+                                </option>
+
+                                <option value="Desktop Application">
+                                    Desktop Application
+                                </option>
+
+                                <option value="API / Backend">
+                                    API / Backend
+                                </option>
+
+                                <option value="Data / Analytics">
+                                    Data / Analytics
+                                </option>
+
+                                <option value="AI / Machine Learning">
+                                    AI / Machine Learning
+                                </option>
+
+                                <option value="Other">
+                                    Other
+                                </option>
+
+                            </select>
+
+                        </div>
+
+                        {/* =================================================
+                            PRIORITY
+                        ================================================= */}
+
+                        <div>
+
+                            <label className="mb-2 block text-sm font-medium text-gray-700">
+                                Priority
+                            </label>
+
+                            <select
+                                name="priority"
+                                value={
+                                    formData.priority
+                                }
+                                onChange={
+                                    handleChange
+                                }
+                                className={inputClass}
+                            >
+
+                                <option value="">
+                                    Select priority
+                                </option>
+
+                                <option value="Low">
+                                    Low
+                                </option>
+
+                                <option value="Medium">
+                                    Medium
+                                </option>
+
+                                <option value="High">
+                                    High
+                                </option>
+
+                                <option value="Critical">
+                                    Critical
+                                </option>
+
+                            </select>
+
+                        </div>
+
+                        {/* =================================================
+                            DURATION
+                        ================================================= */}
+
+                        <div>
+
+                            <label className="mb-2 block text-sm font-medium text-gray-700">
+                                Duration
+                            </label>
+
+                            <input
+                                type="text"
+                                name="duration"
+                                value={
+                                    formData.duration
+                                }
+                                onChange={
+                                    handleChange
+                                }
+                                placeholder="Example: 6 Months"
+                                className={inputClass}
+                            />
+
+                        </div>
+
+                        {/* =================================================
+                            EMPLOYEES
+                        ================================================= */}
 
                         <div className="md:col-span-2">
 
@@ -1214,9 +1487,7 @@ const AllProjects = () => {
                                 <div className="max-h-60 overflow-y-auto">
 
                                     {employees.map(
-                                        (
-                                            employee
-                                        ) => {
+                                        (employee) => {
 
                                             const firstName =
                                                 employee
@@ -1293,8 +1564,7 @@ const AllProjects = () => {
                             <div className="mt-2 flex items-center justify-between">
 
                                 <p className="text-xs text-gray-500">
-                                    Select at least 2
-                                    employees.
+                                    Select at least 2 employees.
                                 </p>
 
                                 <p
@@ -1318,7 +1588,9 @@ const AllProjects = () => {
 
                         </div>
 
-                        {/* START DATE */}
+                        {/* =================================================
+                            START DATE
+                        ================================================= */}
 
                         <div>
 
@@ -1335,12 +1607,14 @@ const AllProjects = () => {
                                 onChange={
                                     handleChange
                                 }
-                                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                className={inputClass}
                             />
 
                         </div>
 
-                        {/* END DATE */}
+                        {/* =================================================
+                            END DATE
+                        ================================================= */}
 
                         <div>
 
@@ -1357,12 +1631,43 @@ const AllProjects = () => {
                                 onChange={
                                     handleChange
                                 }
-                                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                className={inputClass}
                             />
 
                         </div>
 
-                        {/* AUTOMATIC STATUS */}
+                        {/* =================================================
+                            OBJECTIVES
+                        ================================================= */}
+
+                        <div className="md:col-span-2">
+
+                            <label className="mb-2 block text-sm font-medium text-gray-700">
+                                Project Objectives
+                            </label>
+
+                            <textarea
+                                name="objectives"
+                                value={
+                                    formData.objectives
+                                }
+                                onChange={
+                                    handleChange
+                                }
+                                placeholder="Example: Build responsive UI, Develop REST APIs, Implement authentication"
+                                rows={4}
+                                className={`${inputClass} resize-none`}
+                            />
+
+                            <p className="mt-1 text-xs text-gray-400">
+                                Separate objectives with commas.
+                            </p>
+
+                        </div>
+
+                        {/* =================================================
+                            AUTOMATIC STATUS
+                        ================================================= */}
 
                         <div className="md:col-span-2">
 
@@ -1375,18 +1680,15 @@ const AllProjects = () => {
                                 <div className="mt-2 space-y-1 text-xs text-blue-700">
 
                                     <p>
-                                        • Before start date →
-                                        Pending
+                                        • Before start date → Pending
                                     </p>
 
                                     <p>
-                                        • Between start and
-                                        end date → Active
+                                        • Between start and end date → Active
                                     </p>
 
                                     <p>
-                                        • After end date →
-                                        Completed
+                                        • After end date → Completed
                                     </p>
 
                                 </div>
@@ -1395,7 +1697,9 @@ const AllProjects = () => {
 
                         </div>
 
-                        {/* BUTTONS */}
+                        {/* =================================================
+                            BUTTONS
+                        ================================================= */}
 
                         <div className="flex justify-end gap-3 md:col-span-2">
 
@@ -1475,8 +1779,7 @@ const AllProjects = () => {
 
                         <tbody className="divide-y divide-gray-100">
 
-                            {filteredProjects.length >
-                            0 ? (
+                            {filteredProjects.length > 0 ? (
                                 filteredProjects.map(
                                     (project) => {
 
@@ -1501,8 +1804,6 @@ const AllProjects = () => {
                                                 project.id
                                             );
 
-                                        // IMPORTANT:
-                                        // Always calculate status from dates.
                                         const currentStatus =
                                             getProjectStatus(
                                                 project.startDate,
@@ -1652,8 +1953,6 @@ const AllProjects = () => {
 
                                                     <div className="flex items-center gap-2">
 
-                                                        {/* REASSIGN */}
-
                                                         <button
                                                             type="button"
                                                             onClick={() =>
@@ -1665,8 +1964,6 @@ const AllProjects = () => {
                                                         >
                                                             Reassign
                                                         </button>
-
-                                                        {/* DELETE */}
 
                                                         <button
                                                             type="button"
@@ -1689,7 +1986,6 @@ const AllProjects = () => {
                                     }
                                 )
                             ) : (
-
                                 <tr>
 
                                     <td
@@ -1704,14 +2000,13 @@ const AllProjects = () => {
                                         <p className="mt-1 text-xs text-gray-400">
                                             Try searching with
                                             another project,
-                                            employee or
-                                            project code.
+                                            employee or project
+                                            code.
                                         </p>
 
                                     </td>
 
                                 </tr>
-
                             )}
 
                         </tbody>

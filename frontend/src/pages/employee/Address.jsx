@@ -384,11 +384,11 @@ const Address = () => {
                                     placeholder="Enter your current address"
                                     rows="3"
                                     maxLength={300}
-                                    className={
+                                    className={`resize-none ${
                                         errors.currentAddress
                                             ? errorInputClass
                                             : inputClass
-                                    }
+                                    }`}
                                 />
 
                                 {errors.currentAddress && (
@@ -578,11 +578,11 @@ const Address = () => {
                                         placeholder="Enter your permanent address"
                                         rows="3"
                                         maxLength={300}
-                                        className={
+                                        className={`resize-none ${
                                             errors.permanentAddress
                                                 ? errorInputClass
                                                 : inputClass
-                                        }
+                                        }`}
                                     />
 
                                     {errors.permanentAddress && (

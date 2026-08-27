@@ -1,11 +1,18 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, {
+    useEffect,
+    useState,
+} from "react";
+
+import {
+    useNavigate,
+} from "react-router-dom";
 
 // =========================================================
 // SAME STORAGE KEY AS ASSIGN PROJECT
 // =========================================================
 
-const PROJECT_STORAGE_KEY = "assignedProjects";
+const PROJECT_STORAGE_KEY =
+    "assignedProjects";
 
 const AssignedProject = () => {
 
@@ -13,16 +20,22 @@ const AssignedProject = () => {
     // NAVIGATION
     // =========================================================
 
-    const navigate = useNavigate();
+    const navigate =
+        useNavigate();
 
     // =========================================================
     // STATES
     // =========================================================
 
-    const [assignedProjects, setAssignedProjects] =
-        useState([]);
+    const [
+        assignedProjects,
+        setAssignedProjects,
+    ] = useState([]);
 
-    const [search, setSearch] = useState("");
+    const [
+        search,
+        setSearch,
+    ] = useState("");
 
     // =========================================================
     // LOAD PROJECTS
@@ -42,7 +55,9 @@ const AssignedProject = () => {
                 if (storedProjects) {
 
                     setAssignedProjects(
-                        JSON.parse(storedProjects)
+                        JSON.parse(
+                            storedProjects
+                        )
                     );
 
                 } else {
@@ -66,7 +81,10 @@ const AssignedProject = () => {
 
         loadProjects();
 
-        // Listen for localStorage changes
+        // =====================================================
+        // LISTEN FOR LOCAL STORAGE CHANGES
+        // =====================================================
+
         window.addEventListener(
             "storage",
             loadProjects
@@ -84,37 +102,80 @@ const AssignedProject = () => {
     }, []);
 
     // =========================================================
-    // SEARCH PROJECTS BY PROJECT NAME
+    // SEARCH PROJECTS BY PROJECT NAME OR PROJECT CODE
     // =========================================================
 
     const filteredProjects =
-        assignedProjects.filter((project) => {
+        assignedProjects.filter(
+            (project) => {
 
-            const searchValue =
-                search
-                    .toLowerCase()
-                    .trim();
+                const searchValue =
+                    search
+                        .toLowerCase()
+                        .trim();
 
-            if (!searchValue) {
-                return true;
+                // Show all projects when
+                // search is empty
+                if (!searchValue) {
+                    return true;
+                }
+
+                // =================================================
+                // PROJECT NAME
+                // =================================================
+
+                const projectName =
+                    String(
+                        project.projectName ||
+                            ""
+                    ).toLowerCase();
+
+                // =================================================
+                // PROJECT CODE
+                // =================================================
+
+                const projectCode =
+                    String(
+                        project.projectCode ||
+                            ""
+                    ).toLowerCase();
+
+                // =================================================
+                // MATCH NAME OR CODE
+                // =================================================
+
+                return (
+                    projectName.includes(
+                        searchValue
+                    ) ||
+                    projectCode.includes(
+                        searchValue
+                    )
+                );
+
             }
-
-            return project.projectName
-                ?.toLowerCase()
-                .includes(searchValue);
-
-        });
+        );
 
     // =========================================================
     // VIEW PROJECT
     // =========================================================
 
-    const handleViewProject = (project) => {
+    const handleViewProject = (
+        project
+    ) => {
 
         navigate(
             `/admin/projectdetails/${project.id}`
         );
 
+    };
+
+    // =========================================================
+    // CLEAR SEARCH
+    // =========================================================
+
+    const handleClearSearch = () => {
+        setSearch("");
     };
 
     // =========================================================
@@ -141,14 +202,15 @@ const AssignedProject = () => {
 
             </div>
 
-
             {/* =================================================
                 SUMMARY
             ================================================= */}
 
             <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
 
-                {/* TOTAL PROJECTS */}
+                {/* =================================================
+                    TOTAL PROJECTS
+                ================================================= */}
 
                 <div className="rounded-xl bg-white p-5 shadow-sm">
 
@@ -157,13 +219,16 @@ const AssignedProject = () => {
                     </p>
 
                     <h2 className="mt-2 text-2xl font-bold text-gray-800">
-                        {assignedProjects.length}
+                        {
+                            assignedProjects.length
+                        }
                     </h2>
 
                 </div>
 
-
-                {/* ACTIVE PROJECTS */}
+                {/* =================================================
+                    ACTIVE PROJECTS
+                ================================================= */}
 
                 <div className="rounded-xl bg-white p-5 shadow-sm">
 
@@ -185,8 +250,9 @@ const AssignedProject = () => {
 
                 </div>
 
-
-                {/* PENDING PROJECTS */}
+                {/* =================================================
+                    PENDING PROJECTS
+                ================================================= */}
 
                 <div className="rounded-xl bg-white p-5 shadow-sm">
 
@@ -208,8 +274,9 @@ const AssignedProject = () => {
 
                 </div>
 
-
-                {/* COMPLETED PROJECTS */}
+                {/* =================================================
+                    COMPLETED PROJECTS
+                ================================================= */}
 
                 <div className="rounded-xl bg-white p-5 shadow-sm">
 
@@ -233,7 +300,6 @@ const AssignedProject = () => {
 
             </div>
 
-
             {/* =================================================
                 SEARCH BAR
             ================================================= */}
@@ -242,7 +308,9 @@ const AssignedProject = () => {
 
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 
-                    {/* SEARCH INPUT */}
+                    {/* =================================================
+                        SEARCH INPUT
+                    ================================================= */}
 
                     <div className="relative w-full sm:max-w-md">
 
@@ -269,7 +337,6 @@ const AssignedProject = () => {
 
                         </div>
 
-
                         <input
                             type="text"
                             value={search}
@@ -278,21 +345,23 @@ const AssignedProject = () => {
                                     e.target.value
                                 )
                             }
-                            placeholder="Search project by name..."
+                            placeholder="Search project by name or code..."
                             className="w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-10 text-sm outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                         />
 
-
-                        {/* CLEAR SEARCH */}
+                        {/* =================================================
+                            CLEAR SEARCH
+                        ================================================= */}
 
                         {search && (
 
                             <button
                                 type="button"
-                                onClick={() =>
-                                    setSearch("")
+                                onClick={
+                                    handleClearSearch
                                 }
                                 className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 transition hover:text-gray-600"
+                                title="Clear search"
                             >
 
                                 <svg
@@ -318,16 +387,52 @@ const AssignedProject = () => {
 
                     </div>
 
+                    {/* =================================================
+                        SEARCH RESULT COUNT
+                    ================================================= */}
+
+                    {search.trim() && (
+
+                        <p className="text-sm text-gray-500">
+
+                            <span className="font-semibold text-gray-700">
+                                {
+                                    filteredProjects.length
+                                }
+                            </span>{" "}
+
+                            project
+                            {
+                                filteredProjects.length !==
+                                1
+                                    ? "s"
+                                    : ""
+                            }{" "}
+                            found
+
+                        </p>
+
+                    )}
+
                 </div>
 
-            </div>
+                {/* =================================================
+                    SEARCH HELP
+                ================================================= */}
 
+                <p className="mt-2 text-xs text-gray-400">
+                    Search projects by project name or
+                    project code.
+                </p>
+
+            </div>
 
             {/* =================================================
                 PROJECT LIST
             ================================================= */}
 
-            {filteredProjects.length > 0 ? (
+            {filteredProjects.length >
+            0 ? (
 
                 <div className="space-y-4">
 
@@ -335,7 +440,9 @@ const AssignedProject = () => {
                         (project) => (
 
                             <div
-                                key={project.id}
+                                key={
+                                    project.id
+                                }
                                 className="rounded-xl bg-white shadow-sm transition hover:shadow-md"
                             >
 
@@ -369,7 +476,6 @@ const AssignedProject = () => {
 
                                     </div>
 
-
                                     {/* =================================================
                                         TEAM MEMBER
                                     ================================================= */}
@@ -385,7 +491,8 @@ const AssignedProject = () => {
                                             {
                                                 project
                                                     .employeeIds
-                                                    ?.length || 0
+                                                    ?.length ||
+                                                0
                                             }{" "}
 
                                             Members
@@ -393,7 +500,6 @@ const AssignedProject = () => {
                                         </p>
 
                                     </div>
-
 
                                     {/* =================================================
                                         START DATE
@@ -412,7 +518,6 @@ const AssignedProject = () => {
                                         </p>
 
                                     </div>
-
 
                                     {/* =================================================
                                         STATUS
@@ -441,7 +546,6 @@ const AssignedProject = () => {
                                         </span>
 
                                     </div>
-
 
                                     {/* =================================================
                                         ACTION
@@ -484,22 +588,47 @@ const AssignedProject = () => {
 
                         <>
 
-                            <h2 className="text-lg font-semibold text-gray-800">
+                            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
+
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    strokeWidth="1.5"
+                                    stroke="currentColor"
+                                    className="h-6 w-6 text-gray-400"
+                                >
+
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="m21 21-4.5-4.5m0 0A7.5 7.5 0 1 0 6 6a7.5 7.5 0 0 0 10.5 10.5Z"
+                                    />
+
+                                </svg>
+
+                            </div>
+
+                            <h2 className="mt-3 text-lg font-semibold text-gray-800">
                                 No Projects Found
                             </h2>
 
                             <p className="mt-2 text-sm text-gray-500">
+
                                 No project matches{" "}
+
                                 <span className="font-medium text-gray-700">
                                     "{search}"
                                 </span>
+
                                 .
+
                             </p>
 
                             <button
                                 type="button"
-                                onClick={() =>
-                                    setSearch("")
+                                onClick={
+                                    handleClearSearch
                                 }
                                 className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
                             >
@@ -517,8 +646,9 @@ const AssignedProject = () => {
                             </h2>
 
                             <p className="mt-2 text-sm text-gray-500">
-                                You currently don't have
-                                any projects assigned to you.
+                                You currently don't
+                                have any projects
+                                assigned to you.
                             </p>
 
                         </>
