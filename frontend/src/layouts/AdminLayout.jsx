@@ -365,7 +365,11 @@ const AdminLayout = () => {
                             shadow-sky-950/20
                         "
                     >
-                        SM
+                        <img
+                        src="../../../public/pcs_logo.jpg"
+                        alt="PCS Logo"
+                        className="h-full w-full object-contain"
+                    />
                     </div>
 
                     {/* BRAND */}

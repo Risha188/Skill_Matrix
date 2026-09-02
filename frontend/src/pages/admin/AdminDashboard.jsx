@@ -2,7 +2,6 @@ import {
     useEffect,
     useState,
 } from "react";
-
 import {
     useNavigate,
 } from "react-router-dom";
@@ -197,16 +196,20 @@ const AdminDashboard = () => {
             {/* =================================================
                 HEADER
             ================================================= */}
+            <div className="flex justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold text-slate-900">
+                        Dashboard
+                    </h1>
 
-            <div>
-                <h1 className="text-3xl font-bold text-slate-900">
-                    Dashboard
-                </h1>
-
-                <p className="mt-1 text-slate-500">
-                    Welcome to the SkillMatrix
-                    administration panel.
-                </p>
+                    <p className="mt-1 text-slate-500">
+                        Welcome to the SkillMatrix
+                        administration panel.
+                    </p>
+                </div>
+                <div className="text-center">
+                    <button className="bg-orange-400 text-white rounded-lg border-none py-1 px-4 cursor-pointer">Pdf Exporter</button>
+                </div>
             </div>
 
             {/* =================================================
@@ -376,15 +379,14 @@ const AdminDashboard = () => {
                                     </div>
 
                                     <span
-                                        className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                                            admin.status ===
-                                            "Active"
+                                        className={`rounded-full px-3 py-1 text-xs font-semibold ${admin.status ===
+                                                "Active"
                                                 ? "bg-green-100 text-green-700"
                                                 : admin.status ===
-                                                  "Pending"
-                                                ? "bg-orange-100 text-orange-700"
-                                                : "bg-red-100 text-red-700"
-                                        }`}
+                                                    "Pending"
+                                                    ? "bg-orange-100 text-orange-700"
+                                                    : "bg-red-100 text-red-700"
+                                            }`}
                                     >
                                         {
                                             admin.status
@@ -434,7 +436,7 @@ const AdminDashboard = () => {
                 </div>
 
                 {inactiveEmployees.length ===
-                0 ? (
+                    0 ? (
                     <div className="rounded-xl border border-dashed border-slate-300 py-10 text-center">
 
                         <p className="font-semibold text-slate-700">

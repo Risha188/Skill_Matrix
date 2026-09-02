@@ -1,8 +1,7 @@
-// src/components/admin/AdminSidebar.jsx
-
 import {
     NavLink,
     useNavigate,
+    useLocation,
 } from "react-router-dom";
 
 import {
@@ -16,6 +15,7 @@ import {
 const AdminSidebar = () => {
 
     const navigate = useNavigate();
+    const location = useLocation();
 
     const {
         currentAdmin,
@@ -46,6 +46,41 @@ const AdminSidebar = () => {
             hasPermission(permission)
         );
     };
+
+    // =========================================================
+    // CURRENT ROUTE
+    // =========================================================
+
+    const currentPath = location.pathname.toLowerCase();
+
+    // =========================================================
+    // PROJECT SECTION CHECK
+    // =========================================================
+    //
+    // When the user is anywhere inside the Assigned Projects
+    // section, the "All Projects" menu should NOT appear.
+    //
+    // This handles routes such as:
+    //
+    // /admin/assignedproject
+    // /admin/assignedproject/123
+    // /admin/assigned-project
+    // /admin/assigned-project/123
+    // /admin/project-details/123
+    // /admin/project/123
+    // /admin/view-project/123
+    //
+    // =========================================================
+
+    const isAssignedProjectSection =
+        currentPath.includes("/assignedproject") ||
+        currentPath.includes("/assigned-project") ||
+        currentPath.includes("/assignedprojects") ||
+        currentPath.includes("/assigned-projects") ||
+        currentPath.includes("/project-details") ||
+        currentPath.includes("/projectdetail") ||
+        currentPath.includes("/view-project") ||
+        currentPath.includes("/viewproject");
 
     // =========================================================
     // NAVIGATION STYLE
@@ -132,16 +167,19 @@ const AdminSidebar = () => {
                         shrink-0
                         items-center
                         justify-center
+                        overflow-hidden
                         rounded-xl
-                        bg-blue-600
-                        text-sm
-                        font-bold
-                        tracking-wide
-                        text-white
+                        bg-white
                         shadow-lg
                     "
                 >
-                    SM
+
+                    <img
+                        src="/pcs_logo.jpg"
+                        alt="PCS Logo"
+                        className="h-full w-full object-contain"
+                    />
+
                 </div>
 
                 <div className="min-w-0">
@@ -165,6 +203,7 @@ const AdminSidebar = () => {
                 </div>
 
             </div>
+
 
             {/* =====================================================
                 ADMIN INFORMATION
@@ -231,15 +270,18 @@ const AdminSidebar = () => {
 
             </div>
 
+
             {/* =====================================================
                 NAVIGATION
             ===================================================== */}
 
             <nav
                 className="
+                    admin-sidebar-scroll
                     min-h-0
                     flex-1
                     overflow-y-auto
+                    overflow-x-hidden
                     px-3
                     py-6
                 "
@@ -260,6 +302,7 @@ const AdminSidebar = () => {
                     </p>
 
                 </div>
+
 
                 <div className="space-y-1">
 
@@ -314,7 +357,9 @@ const AdminSidebar = () => {
                             )}
 
                         </NavLink>
+
                     )}
+
 
                     {/* =================================================
                         EMPLOYEES
@@ -373,7 +418,9 @@ const AdminSidebar = () => {
                             )}
 
                         </NavLink>
+
                     )}
+
 
                     {/* =================================================
                         ALL PROJECTS
@@ -381,7 +428,7 @@ const AdminSidebar = () => {
 
                     {canView(
                         ADMIN_PERMISSIONS.PROJECTS
-                    ) && (
+                    ) && !isAssignedProjectSection && (
 
                         <NavLink
                             to="/admin/allprojects"
@@ -409,7 +456,19 @@ const AdminSidebar = () => {
                                         >
 
                                             <path
-                                                d="M3 7a2 2 0 012-2h5l2 2h7a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"
+                                                d="
+                                                    M3 7
+                                                    a2 2 0 012-2
+                                                    h5
+                                                    l2 2
+                                                    h7
+                                                    a2 2 0 012 2
+                                                    v8
+                                                    a2 2 0 01-2 2
+                                                    H5
+                                                    a2 2 0 01-2-2
+                                                    V7z
+                                                "
                                             />
 
                                         </svg>
@@ -424,7 +483,9 @@ const AdminSidebar = () => {
                             )}
 
                         </NavLink>
+
                     )}
+
 
                     {/* =================================================
                         ASSIGNED PROJECTS
@@ -436,6 +497,7 @@ const AdminSidebar = () => {
 
                         <NavLink
                             to="/admin/assignedproject"
+                            end
                             className={navLinkClass}
                         >
 
@@ -479,11 +541,13 @@ const AdminSidebar = () => {
                             )}
 
                         </NavLink>
+
                     )}
 
                 </div>
 
             </nav>
+
 
             {/* =====================================================
                 LOGOUT

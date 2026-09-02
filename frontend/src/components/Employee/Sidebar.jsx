@@ -1,6 +1,5 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
-
 const Sidebar = () => {
 
     // =========================================================
@@ -25,14 +24,14 @@ const Sidebar = () => {
         ${
             isActive
                 ? `
-                    bg-blue-600
-                    text-white
-                    shadow-lg
-                    shadow-blue-900/20
+                    bg-white
+                    text-sky-700
+                    shadow-md
+                    shadow-sky-900/10
                   `
                 : `
-                    text-slate-300
-                    hover:bg-slate-800
+                    text-sky-50
+                    hover:bg-sky-500
                     hover:text-white
                   `
         }
@@ -56,8 +55,8 @@ const Sidebar = () => {
 
         ${
             isActive
-                ? "bg-white/15 text-white"
-                : "bg-slate-800 text-slate-400 group-hover:bg-slate-700 group-hover:text-white"
+                ? "bg-sky-100 text-sky-700"
+                : "bg-sky-500 text-sky-100 group-hover:bg-sky-400 group-hover:text-white"
         }
         `;
 
@@ -69,7 +68,7 @@ const Sidebar = () => {
                 min-h-0
                 w-full
                 flex-col
-                bg-slate-950
+                bg-sky-700
                 text-white
             "
         >
@@ -86,7 +85,7 @@ const Sidebar = () => {
                     items-center
                     gap-3
                     border-b
-                    border-slate-800
+                    border-sky-500
                     px-5
                 "
             >
@@ -102,16 +101,15 @@ const Sidebar = () => {
                         items-center
                         justify-center
                         rounded-xl
-                        bg-blue-600
+                        bg-white
                         text-sm
                         font-bold
                         tracking-wide
-                        text-white
-                        shadow-lg
-                        shadow-blue-900/30
+                        text-sky-700
+                        shadow-md
                     "
                 >
-                    SM
+                    <img src="../../../public/pcs_logo.jpg" alt="PCS_Logo"/>
                 </div>
 
                 {/* BRAND TEXT */}
@@ -134,7 +132,7 @@ const Sidebar = () => {
                         className="
                             mt-0.5
                             text-xs
-                            text-slate-400
+                            text-sky-100
                         "
                     >
                         Employee Portal
@@ -173,7 +171,7 @@ const Sidebar = () => {
                             font-semibold
                             uppercase
                             tracking-[0.18em]
-                            text-slate-500
+                            text-sky-100
                         "
                     >
                         Workspace
@@ -551,7 +549,7 @@ const Sidebar = () => {
                 className="
                     shrink-0
                     border-t
-                    border-slate-800
+                    border-sky-500
                     p-3
                 "
             >
@@ -565,7 +563,7 @@ const Sidebar = () => {
                         items-center
                         gap-3
                         rounded-xl
-                        bg-slate-900
+                        bg-sky-500
                         px-3
                         py-3
                     "
@@ -582,10 +580,10 @@ const Sidebar = () => {
                             items-center
                             justify-center
                             rounded-full
-                            bg-blue-600
+                            bg-white
                             text-xs
                             font-bold
-                            text-white
+                            text-sky-700
                         "
                     >
                         EM
@@ -610,7 +608,7 @@ const Sidebar = () => {
                             className="
                                 truncate
                                 text-xs
-                                text-slate-500
+                                text-sky-100
                             "
                         >
                             Employee Account
@@ -637,11 +635,11 @@ const Sidebar = () => {
                         py-3
                         text-sm
                         font-medium
-                        text-slate-400
+                        text-sky-50
                         transition-all
                         duration-200
-                        hover:bg-red-500/10
-                        hover:text-red-400
+                        hover:bg-white
+                        hover:text-red-600
                     "
                 >
 
@@ -653,11 +651,11 @@ const Sidebar = () => {
                             items-center
                             justify-center
                             rounded-lg
-                            bg-slate-800
-                            text-slate-400
+                            bg-sky-500
+                            text-sky-100
                             transition
-                            group-hover:bg-red-500/10
-                            group-hover:text-red-400
+                            group-hover:bg-red-50
+                            group-hover:text-red-600
                         "
                     >
                         <svg

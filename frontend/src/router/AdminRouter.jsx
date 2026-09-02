@@ -140,7 +140,7 @@ const AdminRouter = createBrowserRouter(
                 ================================================= */}
 
                 <Route
-                    path="projectdetails/:id"
+                    path="project-details/:id"
                     element={
                         <ProjectDetails />
                     }

@@ -1,5 +1,6 @@
 import React, {
     useEffect,
+    useMemo,
     useState,
 } from "react";
 
@@ -8,11 +9,179 @@ import {
 } from "react-router-dom";
 
 // =========================================================
-// SAME STORAGE KEY AS ASSIGN PROJECT
+// STORAGE KEYS
 // =========================================================
 
 const PROJECT_STORAGE_KEY =
     "assignedProjects";
+
+const DELETED_PROJECTS_KEY =
+    "deletedProjectIds";
+
+// =========================================================
+// GET PROJECT STATUS
+// =========================================================
+
+const getProjectStatus = (
+    startDate,
+    endDate
+) => {
+    if (!startDate || !endDate) {
+        return "Pending";
+    }
+
+    const today = new Date();
+
+    today.setHours(
+        0,
+        0,
+        0,
+        0
+    );
+
+    const start = new Date(
+        `${startDate}T00:00:00`
+    );
+
+    const end = new Date(
+        `${endDate}T23:59:59`
+    );
+
+    if (
+        Number.isNaN(
+            start.getTime()
+        )
+    ) {
+        return "Pending";
+    }
+
+    if (
+        Number.isNaN(
+            end.getTime()
+        )
+    ) {
+        return "Pending";
+    }
+
+    if (today < start) {
+        return "Pending";
+    }
+
+    if (today <= end) {
+        return "Active";
+    }
+
+    return "Completed";
+};
+
+// =========================================================
+// GET DELETED PROJECT IDS
+// =========================================================
+
+const getDeletedProjectIds = () => {
+    try {
+        const storedDeletedProjects =
+            localStorage.getItem(
+                DELETED_PROJECTS_KEY
+            );
+
+        if (!storedDeletedProjects) {
+            return [];
+        }
+
+        const parsedDeletedProjects =
+            JSON.parse(
+                storedDeletedProjects
+            );
+
+        if (
+            !Array.isArray(
+                parsedDeletedProjects
+            )
+        ) {
+            return [];
+        }
+
+        return parsedDeletedProjects.map(
+            String
+        );
+    } catch (error) {
+        console.error(
+            "Failed to read deleted project IDs:",
+            error
+        );
+
+        return [];
+    }
+};
+
+// =========================================================
+// LOAD ASSIGNED PROJECTS
+// =========================================================
+
+const loadAssignedProjects = () => {
+    try {
+        const storedProjects =
+            localStorage.getItem(
+                PROJECT_STORAGE_KEY
+            );
+
+        if (!storedProjects) {
+            return [];
+        }
+
+        const parsedProjects =
+            JSON.parse(
+                storedProjects
+            );
+
+        if (
+            !Array.isArray(
+                parsedProjects
+            )
+        ) {
+            return [];
+        }
+
+        const deletedProjectIds =
+            getDeletedProjectIds();
+
+        return parsedProjects
+            .filter(
+                (project) =>
+                    !deletedProjectIds.includes(
+                        String(project.id)
+                    )
+            )
+            .map((project) => ({
+                ...project,
+
+                employeeIds:
+                    Array.isArray(
+                        project.employeeIds
+                    )
+                        ? project.employeeIds
+                        : [],
+
+                status:
+                    getProjectStatus(
+                        project.startDate,
+                        project.endDate
+                    ),
+            }));
+    } catch (error) {
+        console.error(
+            "Failed to load assigned projects:",
+            error
+        );
+
+        return [];
+    }
+};
+
+// =========================================================
+// ASSIGNED PROJECT
+// =========================================================
 
 const AssignedProject = () => {
 
@@ -30,7 +199,9 @@ const AssignedProject = () => {
     const [
         assignedProjects,
         setAssignedProjects,
-    ] = useState([]);
+    ] = useState(() =>
+        loadAssignedProjects()
+    );
 
     const [
         search,
@@ -38,63 +209,60 @@ const AssignedProject = () => {
     ] = useState("");
 
     // =========================================================
-    // LOAD PROJECTS
+    // LOAD / REFRESH PROJECTS
+    // =========================================================
+
+    const refreshProjects = () => {
+        const latestProjects =
+            loadAssignedProjects();
+
+        setAssignedProjects(
+            latestProjects
+        );
+    };
+
+    // =========================================================
+    // INITIAL LOAD
+    // =========================================================
+
+    useEffect(() => {
+        refreshProjects();
+    }, []);
+
+    // =========================================================
+    // STORAGE + WINDOW FOCUS
     // =========================================================
 
     useEffect(() => {
 
-        const loadProjects = () => {
-
-            try {
-
-                const storedProjects =
-                    localStorage.getItem(
-                        PROJECT_STORAGE_KEY
-                    );
-
-                if (storedProjects) {
-
-                    setAssignedProjects(
-                        JSON.parse(
-                            storedProjects
-                        )
-                    );
-
-                } else {
-
-                    setAssignedProjects([]);
-
-                }
-
-            } catch (error) {
-
-                console.error(
-                    "Failed to load assigned projects:",
-                    error
-                );
-
-                setAssignedProjects([]);
-
-            }
-
+        const handleStorageChange = () => {
+            refreshProjects();
         };
 
-        loadProjects();
-
-        // =====================================================
-        // LISTEN FOR LOCAL STORAGE CHANGES
-        // =====================================================
+        const handleWindowFocus = () => {
+            refreshProjects();
+        };
 
         window.addEventListener(
             "storage",
-            loadProjects
+            handleStorageChange
+        );
+
+        window.addEventListener(
+            "focus",
+            handleWindowFocus
         );
 
         return () => {
 
             window.removeEventListener(
                 "storage",
-                loadProjects
+                handleStorageChange
+            );
+
+            window.removeEventListener(
+                "focus",
+                handleWindowFocus
             );
 
         };
@@ -102,72 +270,103 @@ const AssignedProject = () => {
     }, []);
 
     // =========================================================
-    // SEARCH PROJECTS BY PROJECT NAME OR PROJECT CODE
+    // AUTOMATIC STATUS REFRESH
+    // =========================================================
+
+    useEffect(() => {
+
+        const interval =
+            setInterval(() => {
+                refreshProjects();
+            }, 60 * 1000);
+
+        return () => {
+            clearInterval(
+                interval
+            );
+        };
+
+    }, []);
+
+    // =========================================================
+    // FILTER PROJECTS
     // =========================================================
 
     const filteredProjects =
-        assignedProjects.filter(
-            (project) => {
+        useMemo(() => {
 
-                const searchValue =
-                    search
-                        .toLowerCase()
-                        .trim();
+            const searchValue =
+                search
+                    .toLowerCase()
+                    .trim();
 
-                // Show all projects when
-                // search is empty
-                if (!searchValue) {
-                    return true;
-                }
-
-                // =================================================
-                // PROJECT NAME
-                // =================================================
-
-                const projectName =
-                    String(
-                        project.projectName ||
-                            ""
-                    ).toLowerCase();
-
-                // =================================================
-                // PROJECT CODE
-                // =================================================
-
-                const projectCode =
-                    String(
-                        project.projectCode ||
-                            ""
-                    ).toLowerCase();
-
-                // =================================================
-                // MATCH NAME OR CODE
-                // =================================================
-
-                return (
-                    projectName.includes(
-                        searchValue
-                    ) ||
-                    projectCode.includes(
-                        searchValue
-                    )
-                );
-
+            if (!searchValue) {
+                return assignedProjects;
             }
-        );
+
+            return assignedProjects.filter(
+                (project) => {
+
+                    const projectName =
+                        String(
+                            project.projectName ||
+                                ""
+                        ).toLowerCase();
+
+                    const projectCode =
+                        String(
+                            project.projectCode ||
+                                ""
+                        ).toLowerCase();
+
+                    return (
+                        projectName.includes(
+                            searchValue
+                        ) ||
+                        projectCode.includes(
+                            searchValue
+                        )
+                    );
+                }
+            );
+
+        }, [
+            assignedProjects,
+            search,
+        ]);
 
     // =========================================================
     // VIEW PROJECT
+    // =========================================================
+    //
+    // IMPORTANT:
+    //
+    // Use exactly the same route everywhere:
+    //
+    // /admin/project-details/:projectId
+    //
+    // Do NOT use:
+    //
+    // /admin/projectdetails/:projectId
+    //
     // =========================================================
 
     const handleViewProject = (
         project
     ) => {
 
-        navigate(
-            `/admin/projectdetails/${project.id}`
-        );
+        if (!project?.id) {
+            return;
+        }
 
+        navigate(
+            `/admin/project-details/${project.id}`,
+            {
+                state: {
+                    project,
+                },
+            }
+        );
     };
 
     // =========================================================
@@ -179,11 +378,32 @@ const AssignedProject = () => {
     };
 
     // =========================================================
+    // STATUS CLASSES
+    // =========================================================
+
+    const getStatusClasses = (
+        status
+    ) => {
+
+        switch (status) {
+
+            case "Active":
+                return "bg-green-100 text-green-700";
+
+            case "Completed":
+                return "bg-blue-100 text-blue-700";
+
+            case "Pending":
+            default:
+                return "bg-yellow-100 text-yellow-700";
+        }
+    };
+
+    // =========================================================
     // RETURN
     // =========================================================
 
     return (
-
         <div className="min-h-screen bg-gray-100 p-6">
 
             {/* =================================================
@@ -208,9 +428,7 @@ const AssignedProject = () => {
 
             <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
 
-                {/* =================================================
-                    TOTAL PROJECTS
-                ================================================= */}
+                {/* TOTAL */}
 
                 <div className="rounded-xl bg-white p-5 shadow-sm">
 
@@ -226,9 +444,7 @@ const AssignedProject = () => {
 
                 </div>
 
-                {/* =================================================
-                    ACTIVE PROJECTS
-                ================================================= */}
+                {/* ACTIVE */}
 
                 <div className="rounded-xl bg-white p-5 shadow-sm">
 
@@ -250,9 +466,7 @@ const AssignedProject = () => {
 
                 </div>
 
-                {/* =================================================
-                    PENDING PROJECTS
-                ================================================= */}
+                {/* PENDING */}
 
                 <div className="rounded-xl bg-white p-5 shadow-sm">
 
@@ -274,9 +488,7 @@ const AssignedProject = () => {
 
                 </div>
 
-                {/* =================================================
-                    COMPLETED PROJECTS
-                ================================================= */}
+                {/* COMPLETED */}
 
                 <div className="rounded-xl bg-white p-5 shadow-sm">
 
@@ -308,9 +520,7 @@ const AssignedProject = () => {
 
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 
-                    {/* =================================================
-                        SEARCH INPUT
-                    ================================================= */}
+                    {/* SEARCH INPUT */}
 
                     <div className="relative w-full sm:max-w-md">
 
@@ -349,9 +559,7 @@ const AssignedProject = () => {
                             className="w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-10 text-sm outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                         />
 
-                        {/* =================================================
-                            CLEAR SEARCH
-                        ================================================= */}
+                        {/* CLEAR */}
 
                         {search && (
 
@@ -387,9 +595,7 @@ const AssignedProject = () => {
 
                     </div>
 
-                    {/* =================================================
-                        SEARCH RESULT COUNT
-                    ================================================= */}
+                    {/* RESULT COUNT */}
 
                     {search.trim() && (
 
@@ -416,10 +622,6 @@ const AssignedProject = () => {
 
                 </div>
 
-                {/* =================================================
-                    SEARCH HELP
-                ================================================= */}
-
                 <p className="mt-2 text-xs text-gray-400">
                     Search projects by project name or
                     project code.
@@ -431,147 +633,181 @@ const AssignedProject = () => {
                 PROJECT LIST
             ================================================= */}
 
-            {filteredProjects.length >
-            0 ? (
+            {filteredProjects.length > 0 ? (
 
                 <div className="space-y-4">
 
                     {filteredProjects.map(
-                        (project) => (
+                        (project) => {
 
-                            <div
-                                key={
-                                    project.id
-                                }
-                                className="rounded-xl bg-white shadow-sm transition hover:shadow-md"
-                            >
+                            const currentStatus =
+                                getProjectStatus(
+                                    project.startDate,
+                                    project.endDate
+                                );
 
-                                {/* =================================================
-                                    PROJECT ROW
-                                ================================================= */}
+                            return (
 
-                                <div className="flex flex-col gap-5 p-5 lg:flex-row lg:items-center lg:justify-between">
-
-                                    {/* =================================================
-                                        PROJECT
-                                    ================================================= */}
-
-                                    <div className="min-w-0 lg:w-[28%]">
-
-                                        <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
-                                            Project
-                                        </p>
-
-                                        <h2 className="mt-1 text-md font-semibold text-gray-800">
-                                            {
-                                                project.projectName
-                                            }
-                                        </h2>
-
-                                        <p className="mt-1 text-xs font-medium text-gray-400">
-                                            {
-                                                project.projectCode
-                                            }
-                                        </p>
-
-                                    </div>
+                                <div
+                                    key={
+                                        project.id
+                                    }
+                                    className="rounded-xl bg-white shadow-sm transition hover:shadow-md"
+                                >
 
                                     {/* =================================================
-                                        TEAM MEMBER
+                                        PROJECT ROW
                                     ================================================= */}
 
-                                    <div className="lg:w-[14%]">
+                                    <div className="flex flex-col gap-5 p-5 lg:flex-row lg:items-center lg:justify-between">
 
-                                        <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
-                                            Team Member
-                                        </p>
+                                        {/* =================================================
+                                            PROJECT
+                                        ================================================= */}
 
-                                        <p className="mt-2 text-sm font-semibold text-gray-800">
+                                        <div className="min-w-0 lg:w-[28%]">
 
-                                            {
-                                                project
-                                                    .employeeIds
-                                                    ?.length ||
-                                                0
-                                            }{" "}
+                                            <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                                                Project
+                                            </p>
 
-                                            Members
+                                            <h2 className="mt-1 truncate text-base font-semibold text-gray-800">
+                                                {
+                                                    project.projectName ||
+                                                    "Unnamed Project"
+                                                }
+                                            </h2>
 
-                                        </p>
+                                            <p className="mt-1 text-xs font-medium text-gray-400">
+                                                {
+                                                    project.projectCode ||
+                                                    "-"
+                                                }
+                                            </p>
 
-                                    </div>
+                                        </div>
 
-                                    {/* =================================================
-                                        START DATE
-                                    ================================================= */}
+                                        {/* =================================================
+                                            TEAM MEMBERS
+                                        ================================================= */}
 
-                                    <div className="lg:w-[15%]">
+                                        <div className="lg:w-[14%]">
 
-                                        <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
-                                            Start Date
-                                        </p>
+                                            <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                                                Team Members
+                                            </p>
 
-                                        <p className="mt-2 text-sm font-medium text-gray-700">
-                                            {
-                                                project.startDate
-                                            }
-                                        </p>
+                                            <p className="mt-2 text-sm font-semibold text-gray-800">
 
-                                    </div>
-
-                                    {/* =================================================
-                                        STATUS
-                                    ================================================= */}
-
-                                    <div className="lg:w-[14%]">
-
-                                        <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
-                                            Status
-                                        </p>
-
-                                        <span
-                                            className={`mt-2 inline-block rounded-full px-3 py-1 text-xs font-medium ${
-                                                project.status ===
-                                                "Active"
-                                                    ? "bg-green-100 text-green-700"
-                                                    : project.status ===
-                                                      "Pending"
-                                                    ? "bg-yellow-100 text-yellow-700"
-                                                    : "bg-blue-100 text-blue-700"
-                                            }`}
-                                        >
-                                            {
-                                                project.status
-                                            }
-                                        </span>
-
-                                    </div>
-
-                                    {/* =================================================
-                                        ACTION
-                                    ================================================= */}
-
-                                    <div className="lg:w-[15%] lg:text-right">
-
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                handleViewProject(
+                                                {
                                                     project
-                                                )
-                                            }
-                                            className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700"
-                                        >
-                                            View Project
-                                        </button>
+                                                        .employeeIds
+                                                        ?.length ||
+                                                    0
+                                                }{" "}
+
+                                                {
+                                                    project
+                                                        .employeeIds
+                                                        ?.length ===
+                                                    1
+                                                        ? "Member"
+                                                        : "Members"
+                                                }
+
+                                            </p>
+
+                                        </div>
+
+                                        {/* =================================================
+                                            START DATE
+                                        ================================================= */}
+
+                                        <div className="lg:w-[15%]">
+
+                                            <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                                                Start Date
+                                            </p>
+
+                                            <p className="mt-2 text-sm font-medium text-gray-700">
+                                                {
+                                                    project.startDate ||
+                                                    "-"
+                                                }
+                                            </p>
+
+                                        </div>
+
+                                        {/* =================================================
+                                            END DATE
+                                        ================================================= */}
+
+                                        <div className="lg:w-[15%]">
+
+                                            <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                                                End Date
+                                            </p>
+
+                                            <p className="mt-2 text-sm font-medium text-gray-700">
+                                                {
+                                                    project.endDate ||
+                                                    "-"
+                                                }
+                                            </p>
+
+                                        </div>
+
+                                        {/* =================================================
+                                            STATUS
+                                        ================================================= */}
+
+                                        <div className="lg:w-[14%]">
+
+                                            <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                                                Status
+                                            </p>
+
+                                            <span
+                                                className={`mt-2 inline-block rounded-full px-3 py-1 text-xs font-medium ${getStatusClasses(
+                                                    currentStatus
+                                                )}`}
+                                            >
+                                                {
+                                                    currentStatus
+                                                }
+                                            </span>
+
+                                        </div>
+
+                                        {/* =================================================
+                                            ACTION
+                                        ================================================= */}
+
+                                        <div className="lg:w-[14%] lg:text-right">
+
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    handleViewProject(
+                                                        {
+                                                            ...project,
+                                                            status: currentStatus,
+                                                        }
+                                                    )
+                                                }
+                                                className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                                            >
+                                                View Project
+                                            </button>
+
+                                        </div>
 
                                     </div>
 
                                 </div>
 
-                            </div>
-
-                        )
+                            );
+                        }
                     )}
 
                 </div>
@@ -579,7 +815,7 @@ const AssignedProject = () => {
             ) : (
 
                 /* =================================================
-                    EMPTY / SEARCH EMPTY STATE
+                    EMPTY STATE
                 ================================================= */
 
                 <div className="rounded-xl bg-white p-10 text-center shadow-sm">
@@ -641,7 +877,28 @@ const AssignedProject = () => {
 
                         <>
 
-                            <h2 className="text-lg font-semibold text-gray-800">
+                            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
+
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    strokeWidth="1.5"
+                                    stroke="currentColor"
+                                    className="h-6 w-6 text-gray-400"
+                                >
+
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
+                                    />
+
+                                </svg>
+
+                            </div>
+
+                            <h2 className="mt-3 text-lg font-semibold text-gray-800">
                                 No Projects Assigned
                             </h2>
 

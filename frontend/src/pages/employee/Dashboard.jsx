@@ -135,19 +135,25 @@ const Dashboard = () => {
                 {/* =================================================
                     HEADER
                 ================================================= */}
+                <div className="flex justify-between">
+                    <div className="mb-8">
 
-                <div className="mb-8">
+                        <h1 className="text-3xl font-bold text-gray-800">
+                            Employee Dashboard
+                        </h1>
 
-                    <h1 className="text-3xl font-bold text-gray-800">
-                        Employee Dashboard
-                    </h1>
+                        <p className="mt-1 text-sm text-gray-500">
+                            Manage your employee profile and keep your
+                            information up to date.
+                        </p>
 
-                    <p className="mt-1 text-sm text-gray-500">
-                        Manage your employee profile and keep your
-                        information up to date.
-                    </p>
+                    </div>
 
+                    <div className="text-center">
+                        <button className="bg-orange-400 text-white rounded-lg border-none py-1 px-4 cursor-pointer">Pdf Exporter</button>
+                    </div>
                 </div>
+
 
                 {/* =================================================
                     WELCOME
@@ -250,10 +256,9 @@ const Dashboard = () => {
 
                         {completionPercentage === 100
                             ? "Your profile is complete!"
-                            : `You have ${remainingCount} section${
-                                remainingCount !== 1
-                                    ? "s"
-                                    : ""
+                            : `You have ${remainingCount} section${remainingCount !== 1
+                                ? "s"
+                                : ""
                             } remaining.`
                         }
 
@@ -534,10 +539,9 @@ const Dashboard = () => {
                                                 items-center
                                                 justify-center
                                                 rounded-full
-                                                ${
-                                                    isCompleted
-                                                        ? "bg-green-100 text-green-600"
-                                                        : "bg-gray-100 text-gray-400"
+                                                ${isCompleted
+                                                    ? "bg-green-100 text-green-600"
+                                                    : "bg-gray-100 text-gray-400"
                                                 }
                                             `}
                                         >
@@ -587,10 +591,9 @@ const Dashboard = () => {
                                                     mt-1
                                                     text-xs
                                                     font-medium
-                                                    ${
-                                                        isCompleted
-                                                            ? "text-green-600"
-                                                            : "text-gray-400"
+                                                    ${isCompleted
+                                                        ? "text-green-600"
+                                                        : "text-gray-400"
                                                     }
                                                 `}
                                             >
@@ -615,10 +618,9 @@ const Dashboard = () => {
                                             text-sm
                                             font-medium
                                             transition
-                                            ${
-                                                isCompleted
-                                                    ? "border border-gray-300 text-gray-600 hover:bg-gray-100"
-                                                    : "bg-sky-800 text-white hover:bg-sky-700"
+                                            ${isCompleted
+                                                ? "border border-gray-300 text-gray-600 hover:bg-gray-100"
+                                                : "bg-sky-800 text-white hover:bg-sky-700"
                                             }
                                         `}
                                     >
