@@ -9,8 +9,8 @@ import {
 // AUTHENTICATION
 // =========================================================
 
-import Login from "../pages/auth/login.jsx";
-import Registration from "../pages/auth/registration.jsx";
+import Login from "../pages/auth/Login.jsx";
+import Registration from "../pages/auth/Registration.jsx";
 import forgotPassword from "../pages/auth/forgotPassword.jsx";
 import verifyEmail from "../pages/auth/verifyEmail.jsx";
 import setPassword from "../pages/auth/setPassword.jsx";
