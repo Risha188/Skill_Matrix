@@ -1,17 +1,28 @@
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { loginUser } from "../../service/authService";
 import { Eye, EyeOff } from "lucide-react";
+import { loginUser } from "../../service/authService";
 
 const Login = () => {
     const navigate = useNavigate();
 
+    // =====================================================
+    // STATE
+    // =====================================================
+
     const [showPassword, setShowPassword] = useState(false);
+
+    const [loading, setLoading] = useState(false);
 
     const [formData, setFormData] = useState({
         email: "",
         password: "",
     });
+
+    // =====================================================
+    // HANDLE INPUT CHANGE
+    // =====================================================
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -22,290 +33,540 @@ const Login = () => {
         }));
     };
 
+    // =====================================================
+    // SOCIAL LOGIN
+    // =====================================================
+
     const handleSocialLogin = (provider) => {
-    console.log(`${provider} login selected`);
+        console.log(`${provider} login selected`);
 
-    alert(
-        `${provider} login is not connected yet.`
-    );
-};
-const handleSubmit = async (e) => {
-    e.preventDefault();
+        alert(
+            `${provider} login is not connected yet.`
+        );
+    };
 
-    const email = formData.email.trim().toLowerCase();
-    const password = formData.password;
+    // =====================================================
+    // HANDLE LOGIN
+    // =====================================================
 
-    if (!email || !password) {
-        alert("Email and password are required.");
-        return;
-    }
+    const handleSubmit = async (e) => {
+        e.preventDefault();
 
-    try {
-        console.log("EMPLOYEE LOGIN REQUEST");
-        console.log("Email:", email);
-
-        const response = await loginUser({
-            email,
-            password,
-        });
-
-        const data = response?.data || {};
-
-        console.log("LOGIN RESPONSE:", data);
-
-        // ==================================================
-        // LOGIN RESPONSE CHECK
-        // ==================================================
-
-        if (!data.success) {
-            alert(
-                data.message ||
-                    "Login failed. Please check your email and password."
-            );
+        // Prevent multiple requests
+        if (loading) {
             return;
         }
 
-        const token = data.token;
-        const user = data.user || data.userData || {};
+        // =================================================
+        // NORMALIZE INPUT
+        // =================================================
 
-        if (!token) {
-            console.error("❌ No JWT token returned by backend.");
-            alert(
-                "Login succeeded, but the server did not return an authentication token."
-            );
-            return;
-        }
-
-        // ==================================================
-        // NORMALIZE ROLE
-        // ==================================================
-
-        const userRole = String(
-            user.role ||
-                data.role ||
-                ""
-        )
+        const email = formData.email
             .trim()
             .toLowerCase();
 
-        console.log("LOGIN ROLE:", userRole);
+        const password = formData.password;
 
-        // ==================================================
-        // ADMIN ACCOUNT ON EMPLOYEE LOGIN PAGE
-        // ==================================================
+        // =================================================
+        // VALIDATION
+        // =================================================
 
-        if (userRole === "admin") {
-            console.log(
-                "⚠️ Admin account used on Employee Login page."
-            );
-
-            // Remove ONLY employee session.
-            sessionStorage.removeItem("employeeToken");
-            sessionStorage.removeItem("employeeUser");
-            sessionStorage.removeItem("employeeUserId");
-            sessionStorage.removeItem("employeeUserEmail");
-            sessionStorage.removeItem("employeeUserRole");
-            sessionStorage.removeItem("employeeAuthenticated");
-            sessionStorage.removeItem("employeeId");
-
+        if (!email || !password) {
             alert(
-                "This is the Employee Login page. Please use the Admin Login page for administrator access."
+                "Email and password are required."
             );
-
-            navigate("/admin", {
-                replace: true,
-            });
 
             return;
         }
 
-        // ==================================================
-        // EMPLOYEE ACCOUNT
-        // ==================================================
+        setLoading(true);
 
-        if (userRole !== "employee") {
-            console.error(
-                "❌ Invalid/unknown user role:",
+        try {
+            console.log(
+                "================================="
+            );
+
+            console.log(
+                "🔐 EMPLOYEE LOGIN REQUEST"
+            );
+
+            console.log(
+                "Email:",
+                email
+            );
+
+            console.log(
+                "================================="
+            );
+
+            // =================================================
+            // API REQUEST
+            // =================================================
+
+            const response = await loginUser({
+                email,
+                password,
+            });
+
+            const data = response?.data || {};
+
+            console.log(
+                "✅ LOGIN RESPONSE:",
+                data
+            );
+
+            // =================================================
+            // CHECK SUCCESS
+            // =================================================
+
+            if (!data.success) {
+                alert(
+                    data.message ||
+                        "Login failed. Please check your email and password."
+                );
+
+                return;
+            }
+
+            // =================================================
+            // GET TOKEN
+            // =================================================
+
+            const token =
+                data.token ||
+                data.accessToken ||
+                data.access_token ||
+                "";
+
+            // =================================================
+            // GET USER
+            // =================================================
+
+            const user =
+                data.user ||
+                data.userData ||
+                data.employee?.user ||
+                {};
+
+            // =================================================
+            // TOKEN VALIDATION
+            // =================================================
+
+            if (!token) {
+                console.error(
+                    "❌ No authentication token returned by backend."
+                );
+
+                alert(
+                    "Login succeeded, but the server did not return an authentication token."
+                );
+
+                return;
+            }
+
+            // =================================================
+            // NORMALIZE ROLE
+            // =================================================
+
+            const userRole = String(
+                user.role ||
+                    data.role ||
+                    data.userRole ||
+                    ""
+            )
+                .trim()
+                .toLowerCase();
+
+            console.log(
+                "👤 LOGIN ROLE:",
                 userRole
             );
 
-            alert(
-                "This account does not have employee access."
+            // =================================================
+            // ADMIN ACCOUNT USED ON EMPLOYEE LOGIN
+            // =================================================
+
+            if (userRole === "admin") {
+                console.warn(
+                    "⚠️ Admin account used on Employee Login page."
+                );
+
+                // Remove ONLY employee session
+                sessionStorage.removeItem(
+                    "employeeToken"
+                );
+
+                sessionStorage.removeItem(
+                    "employeeUser"
+                );
+
+                sessionStorage.removeItem(
+                    "employeeUserId"
+                );
+
+                sessionStorage.removeItem(
+                    "employeeUserEmail"
+                );
+
+                sessionStorage.removeItem(
+                    "employeeUserRole"
+                );
+
+                sessionStorage.removeItem(
+                    "employeeAuthenticated"
+                );
+
+                sessionStorage.removeItem(
+                    "employeeId"
+                );
+
+                alert(
+                    "This is the Employee Login page. Please use the Admin Login page for administrator access."
+                );
+
+                return;
+            }
+
+            // =================================================
+            // EMPLOYEE ROLE VALIDATION
+            // =================================================
+
+            if (userRole !== "employee") {
+                console.error(
+                    "❌ Invalid or unknown user role:",
+                    userRole
+                );
+
+                alert(
+                    "This account does not have employee access."
+                );
+
+                return;
+            }
+
+            // =================================================
+            // EMPLOYEE OBJECT
+            // =================================================
+
+            const employeeObject =
+                data.employee ||
+                data.employeeData ||
+                user.employee ||
+                {};
+
+            // =================================================
+            // EMPLOYEE ID
+            // =================================================
+
+            const employeeId =
+                employeeObject.employeeId ||
+                employeeObject.empId ||
+                employeeObject.employeeID ||
+                data.employeeId ||
+                data.empId ||
+                data.employeeID ||
+                user.employeeId ||
+                user.empId ||
+                user.employeeID ||
+                "";
+
+            // =================================================
+            // USER ID
+            // =================================================
+
+            const userId =
+                user.id ||
+                user._id ||
+                data.userId ||
+                data.user_id ||
+                data.id ||
+                "";
+
+            // =================================================
+            // USER EMAIL
+            // =================================================
+
+            const userEmail =
+                user.email ||
+                data.email ||
+                email;
+
+            console.log(
+                "👨‍💻 Employee ID:",
+                employeeId || "Not returned"
             );
 
-            return;
-        }
+            console.log(
+                "👤 User ID:",
+                userId || "Not returned"
+            );
 
-        // ==================================================
-        // EMPLOYEE ID
-        // ==================================================
-        //
-        // Support all response shapes used by the backend.
-        // Prefer employee.employeeId, then top-level employeeId,
-        // then user.employeeId.
-        //
-        // ==================================================
+            console.log(
+                "📧 User Email:",
+                userEmail
+            );
 
-        const employeeObject =
-            data.employee ||
-            data.employeeData ||
-            {};
+            // =================================================
+            // CLEAR OLD EMPLOYEE SESSION
+            // =================================================
 
-        const employeeId =
-            employeeObject.employeeId ||
-            employeeObject.empId ||
-            data.employeeId ||
-            data.empId ||
-            user.employeeId ||
-            user.empId ||
-            null;
+            sessionStorage.removeItem(
+                "employeeToken"
+            );
 
-        const userId =
-            user.id ||
-            user._id ||
-            data.userId ||
-            data.id ||
-            "";
+            sessionStorage.removeItem(
+                "employeeUser"
+            );
 
-        console.log(
-            "Employee ID after login:",
-            employeeId
-        );
+            sessionStorage.removeItem(
+                "employeeUserId"
+            );
 
-        console.log(
-            "User ID after login:",
-            userId
-        );
+            sessionStorage.removeItem(
+                "employeeUserEmail"
+            );
 
-        // ==================================================
-        // SAVE EMPLOYEE SESSION
-        // ==================================================
-        //
-        // IMPORTANT:
-        // Employee uses employeeToken.
-        // Admin uses adminToken.
-        //
-        // Never overwrite adminToken here.
-        //
-        // ==================================================
+            sessionStorage.removeItem(
+                "employeeUserRole"
+            );
 
-        sessionStorage.setItem(
-            "employeeToken",
-            token
-        );
+            sessionStorage.removeItem(
+                "employeeAuthenticated"
+            );
 
-        sessionStorage.setItem(
-            "employeeUser",
-            JSON.stringify(user)
-        );
+            sessionStorage.removeItem(
+                "employeeId"
+            );
 
-        sessionStorage.setItem(
-            "employeeUserId",
-            String(userId)
-        );
+            // =================================================
+            // SAVE EMPLOYEE SESSION
+            // =================================================
 
-        sessionStorage.setItem(
-            "employeeUserEmail",
-            user.email || email
-        );
-
-        sessionStorage.setItem(
-            "employeeUserRole",
-            "employee"
-        );
-
-        sessionStorage.setItem(
-            "employeeAuthenticated",
-            "true"
-        );
-
-        // Save employeeId only when the backend actually returns it.
-        // Do not save "undefined" or "null".
-        if (employeeId) {
             sessionStorage.setItem(
-                "employeeId",
-                String(employeeId)
+                "employeeToken",
+                token
             );
-        } else {
-            sessionStorage.removeItem("employeeId");
 
-            console.warn(
-                "⚠️ Backend did not return employeeId."
+            sessionStorage.setItem(
+                "employeeUser",
+                JSON.stringify(user)
             );
+
+            sessionStorage.setItem(
+                "employeeUserId",
+                String(userId)
+            );
+
+            sessionStorage.setItem(
+                "employeeUserEmail",
+                userEmail
+            );
+
+            sessionStorage.setItem(
+                "employeeUserRole",
+                "employee"
+            );
+
+            sessionStorage.setItem(
+                "employeeAuthenticated",
+                "true"
+            );
+
+            // =================================================
+            // SAVE EMPLOYEE ID
+            // =================================================
+
+            if (
+                employeeId &&
+                employeeId !== "undefined" &&
+                employeeId !== "null"
+            ) {
+                sessionStorage.setItem(
+                    "employeeId",
+                    String(employeeId)
+                );
+            } else {
+                console.warn(
+                    "⚠️ Backend did not return employeeId."
+                );
+
+                sessionStorage.removeItem(
+                    "employeeId"
+                );
+            }
+
+            // =================================================
+            // REMOVE OLD GENERIC AUTH STORAGE
+            // =================================================
+            //
+            // IMPORTANT:
+            // Do NOT remove adminToken/adminUser.
+            //
+            // =================================================
+
+            localStorage.removeItem(
+                "token"
+            );
+
+            localStorage.removeItem(
+                "authToken"
+            );
+
+            localStorage.removeItem(
+                "accessToken"
+            );
+
+            localStorage.removeItem(
+                "user"
+            );
+
+            localStorage.removeItem(
+                "userId"
+            );
+
+            localStorage.removeItem(
+                "userEmail"
+            );
+
+            localStorage.removeItem(
+                "userRole"
+            );
+
+            localStorage.removeItem(
+                "employeeId"
+            );
+
+            localStorage.removeItem(
+                "isAuthenticated"
+            );
+
+            // =================================================
+            // SUCCESS LOG
+            // =================================================
+
+            console.log(
+                "================================="
+            );
+
+            console.log(
+                "✅ EMPLOYEE LOGIN SUCCESS"
+            );
+
+            console.log(
+                "Employee ID:",
+                employeeId || "Not returned"
+            );
+
+            console.log(
+                "User ID:",
+                userId || "Not returned"
+            );
+
+            console.log(
+                "Email:",
+                userEmail
+            );
+
+            console.log(
+                "Role:",
+                userRole
+            );
+
+            console.log(
+                "🔐 Employee token saved in sessionStorage"
+            );
+
+            console.log(
+                "🛡️ Admin session was NOT changed"
+            );
+
+            console.log(
+                "================================="
+            );
+
+            // =================================================
+            // REDIRECT TO EMPLOYEE DASHBOARD
+            // =================================================
+
+            navigate(
+                "/employee/dashboard",
+                {
+                    replace: true,
+                }
+            );
+        } catch (error) {
+            console.error(
+                "================================="
+            );
+
+            console.error(
+                "❌ EMPLOYEE LOGIN ERROR"
+            );
+
+            console.error(
+                error.response?.data ||
+                    error.message ||
+                    error
+            );
+
+            console.error(
+                "================================="
+            );
+
+            // =================================================
+            // ERROR MESSAGE
+            // =================================================
+
+            const message =
+                error.response?.data?.message ||
+                error.response?.data?.error ||
+                (error.response?.status === 401
+                    ? "Invalid email or password."
+                    : error.response?.status === 403
+                    ? "You are not authorized to access this account."
+                    : error.code ===
+                      "ERR_NETWORK"
+                    ? "Unable to connect to the server. Please check the backend URL and CORS configuration."
+                    : error.message ||
+                      "Unable to login. Please try again.");
+
+            alert(message);
+        } finally {
+            setLoading(false);
         }
+    };
 
-        // ==================================================
-        // REMOVE OLD GENERIC EMPLOYEE STORAGE
-        // ==================================================
-        //
-        // Do NOT remove adminToken/adminUser/etc.
-        //
-        // ==================================================
+    // =====================================================
+    // UI
+    // =====================================================
 
-        localStorage.removeItem("token");
-        localStorage.removeItem("authToken");
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("user");
-        localStorage.removeItem("userId");
-        localStorage.removeItem("userEmail");
-        localStorage.removeItem("userRole");
-        localStorage.removeItem("employeeId");
-        localStorage.removeItem("isAuthenticated");
-
-        console.log("=================================");
-        console.log("✅ EMPLOYEE LOGIN SUCCESS");
-        console.log("Employee ID:", employeeId || "Not returned");
-        console.log("User ID:", userId || "Not returned");
-        console.log("Employee token saved in sessionStorage");
-        console.log("Admin session was NOT changed");
-        console.log("=================================");
-
-        // ==================================================
-        // GO TO EMPLOYEE DASHBOARD
-        // ==================================================
-
-        navigate("/employee/dashboard", {
-            replace: true,
-        });
-
-    } catch (error) {
-        console.error(
-            "❌ Employee Login Error:",
-            error.response?.data || error
-        );
-
-        const message =
-            error.response?.data?.message ||
-            error.message ||
-            "Unable to login. Please check your email and password.";
-
-        alert(message);
-    }
-};
     return (
-
         <div className="min-h-screen bg-linear-to-br from-slate-50 via-white to-blue-50 flex items-center justify-center px-4 py-8">
 
             <div className="w-full max-w-5xl bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100">
 
                 <div className="grid md:grid-cols-2">
 
-                    {/* ================================= */}
+                    {/* ================================================= */}
                     {/* LEFT SIDE */}
-                    {/* ================================= */}
+                    {/* ================================================= */}
 
                     <div className="hidden md:flex bg-linear-to-br from-sky-700 to-indigo-900 text-white p-10 flex-col justify-between">
 
                         <div>
 
+                            {/* Logo */}
+
                             <div className="flex items-center gap-3 mb-10">
 
                                 <div className="w-20 h-20 rounded-full bg-white/20 flex items-center justify-center overflow-hidden shadow">
+
                                     <img
-                                        src="../../../public/pcs_logo.jpg"
+                                        src="/pcs_logo.jpg"
                                         alt="PCS Global logo"
                                         className="h-full w-full object-contain"
                                     />
+
                                 </div>
 
                                 <div>
@@ -322,11 +583,11 @@ const handleSubmit = async (e) => {
 
                             </div>
 
+                            {/* Welcome */}
 
                             <h2 className="text-4xl font-bold leading-tight mb-5">
                                 Welcome back!
                             </h2>
-
 
                             <p className="text-blue-100 leading-7">
                                 Sign in to access your Skill Matrix
@@ -336,6 +597,7 @@ const handleSubmit = async (e) => {
 
                         </div>
 
+                        {/* Features */}
 
                         <div className="space-y-4 text-sm text-blue-100">
 
@@ -349,7 +611,6 @@ const handleSubmit = async (e) => {
 
                             </div>
 
-
                             <div className="flex items-center gap-3">
 
                                 <span className="w-7 h-7 rounded-full bg-white/15 flex items-center justify-center">
@@ -359,7 +620,6 @@ const handleSubmit = async (e) => {
                                 Manage skills and experience
 
                             </div>
-
 
                             <div className="flex items-center gap-3">
 
@@ -375,23 +635,26 @@ const handleSubmit = async (e) => {
 
                     </div>
 
-
-                    {/* ================================= */}
+                    {/* ================================================= */}
                     {/* RIGHT SIDE */}
-                    {/* ================================= */}
+                    {/* ================================================= */}
 
                     <div className="p-6 sm:p-10">
 
-                        {/* Mobile Logo */}
+                        {/* ================================================= */}
+                        {/* MOBILE LOGO */}
+                        {/* ================================================= */}
 
                         <div className="md:hidden text-center mb-7">
 
-                            <div className="inline-flex w-12 h-12 rounded-xl bg-white items-center justify-center overflow-hidden shadow mb-2">
+                            <div className="inline-flex w-16 h-16 rounded-xl bg-white items-center justify-center overflow-hidden shadow mb-3">
+
                                 <img
-                                    src="/pcs_logo.png"
+                                    src="/pcs_logo.jpg"
                                     alt="PCS Global logo"
                                     className="h-full w-full object-contain"
                                 />
+
                             </div>
 
                             <h1 className="text-2xl font-bold text-slate-800">
@@ -404,8 +667,9 @@ const handleSubmit = async (e) => {
 
                         </div>
 
-
-                        {/* Heading */}
+                        {/* ================================================= */}
+                        {/* HEADING */}
+                        {/* ================================================= */}
 
                         <div className="mb-7">
 
@@ -419,44 +683,55 @@ const handleSubmit = async (e) => {
 
                         </div>
 
-
-                        {/* ================================= */}
+                        {/* ================================================= */}
                         {/* LOGIN FORM */}
-                        {/* ================================= */}
+                        {/* ================================================= */}
 
                         <form
                             onSubmit={handleSubmit}
                             className="space-y-5"
                         >
 
-                            {/* Email */}
+                            {/* ================================================= */}
+                            {/* EMAIL */}
+                            {/* ================================================= */}
 
                             <div>
 
-                                <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                                <label
+                                    htmlFor="email"
+                                    className="block text-sm font-medium text-slate-700 mb-1.5"
+                                >
                                     Email Address
                                 </label>
 
                                 <input
+                                    id="email"
                                     type="email"
                                     name="email"
                                     value={formData.email}
                                     onChange={handleChange}
                                     placeholder="Enter your email"
+                                    autoComplete="email"
                                     required
-                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                                    disabled={loading}
+                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100 disabled:bg-slate-50 disabled:cursor-not-allowed"
                                 />
 
                             </div>
 
-
-                            {/* Password */}
+                            {/* ================================================= */}
+                            {/* PASSWORD */}
+                            {/* ================================================= */}
 
                             <div>
 
                                 <div className="flex items-center justify-between mb-1.5">
 
-                                    <label className="block text-sm font-medium text-slate-700">
+                                    <label
+                                        htmlFor="password"
+                                        className="block text-sm font-medium text-slate-700"
+                                    >
                                         Password
                                     </label>
 
@@ -469,10 +744,10 @@ const handleSubmit = async (e) => {
 
                                 </div>
 
-
                                 <div className="relative">
 
                                     <input
+                                        id="password"
                                         type={
                                             showPassword
                                                 ? "text"
@@ -482,52 +757,76 @@ const handleSubmit = async (e) => {
                                         value={formData.password}
                                         onChange={handleChange}
                                         placeholder="Enter your password"
+                                        autoComplete="current-password"
                                         required
-                                        className="w-full px-4 py-3 pr-12 rounded-xl border border-slate-200 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                                        disabled={loading}
+                                        className="w-full px-4 py-3 pr-12 rounded-xl border border-slate-200 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100 disabled:bg-slate-50 disabled:cursor-not-allowed"
                                     />
-
 
                                     <button
                                         type="button"
+                                        aria-label={
+                                            showPassword
+                                                ? "Hide password"
+                                                : "Show password"
+                                        }
                                         onClick={() =>
                                             setShowPassword(
-                                                !showPassword
+                                                (prev) =>
+                                                    !prev
                                             )
                                         }
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-blue-600"
+                                        disabled={loading}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-blue-600 disabled:opacity-50"
                                     >
-                                        {showPassword
-                                            ? <EyeOff size={20} />
-                                            : <Eye size={20} />
-                                        }
+                                        {showPassword ? (
+                                            <EyeOff
+                                                size={20}
+                                            />
+                                        ) : (
+                                            <Eye
+                                                size={20}
+                                            />
+                                        )}
                                     </button>
 
                                 </div>
 
                             </div>
 
-
-                            {/* Login */}
+                            {/* ================================================= */}
+                            {/* LOGIN BUTTON */}
+                            {/* ================================================= */}
 
                             <button
                                 type="submit"
-                                className="w-full text-md py-3.5 rounded-xl bg-sky-700 text-white font-semibold hover:bg-sky-800 active:scale-[0.99] transition shadow-lg shadow-blue-200"
+                                disabled={loading}
+                                className="w-full text-md py-3.5 rounded-xl bg-sky-700 text-white font-semibold hover:bg-sky-800 active:scale-[0.99] transition shadow-lg shadow-blue-200 disabled:opacity-70 disabled:cursor-not-allowed disabled:active:scale-100"
                             >
-                                Login
+                                {loading ? (
+                                    <span className="flex items-center justify-center gap-2">
+
+                                        <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+
+                                        Signing in...
+
+                                    </span>
+                                ) : (
+                                    "Login"
+                                )}
                             </button>
 
                         </form>
 
-
-                        {/* ================================= */}
+                        {/* ================================================= */}
                         {/* SOCIAL LOGIN */}
-                        {/* ================================= */}
+                        {/* ================================================= */}
 
                         <div className="flex items-center gap-3 my-6">
 
                             <div className="flex-1 h-px bg-slate-200"></div>
 
-                            <span className="text-xs text-slate-400">
+                            <span className="text-xs text-slate-400 whitespace-nowrap">
                                 OR CONTINUE WITH
                             </span>
 
@@ -535,14 +834,15 @@ const handleSubmit = async (e) => {
 
                         </div>
 
-
                         <div className="grid grid-cols-2 gap-3">
 
                             <SocialButton
                                 icon="G"
                                 name="Google"
                                 onClick={() =>
-                                    handleSocialLogin("Google")
+                                    handleSocialLogin(
+                                        "Google"
+                                    )
                                 }
                             />
 
@@ -550,16 +850,17 @@ const handleSubmit = async (e) => {
                                 icon="in"
                                 name="LinkedIn"
                                 onClick={() =>
-                                    handleSocialLogin("LinkedIn")
+                                    handleSocialLogin(
+                                        "LinkedIn"
+                                    )
                                 }
                             />
 
                         </div>
 
-
-                        {/* ================================= */}
+                        {/* ================================================= */}
                         {/* REGISTRATION */}
-                        {/* ================================= */}
+                        {/* ================================================= */}
 
                         <div className="text-center mt-7">
 
@@ -578,10 +879,9 @@ const handleSubmit = async (e) => {
 
                         </div>
 
-
-                        {/* ================================= */}
+                        {/* ================================================= */}
                         {/* ADMIN LOGIN */}
-                        {/* ================================= */}
+                        {/* ================================================= */}
 
                         <div className="mt-6 pt-5 border-t border-slate-100 text-center">
 
@@ -598,8 +898,9 @@ const handleSubmit = async (e) => {
 
                         </div>
 
-
-                        {/* Home */}
+                        {/* ================================================= */}
+                        {/* HOME */}
+                        {/* ================================================= */}
 
                         <div className="text-center mt-5">
 
@@ -622,25 +923,21 @@ const handleSubmit = async (e) => {
     );
 };
 
-
-// =============================================
+// =====================================================
 // SOCIAL BUTTON
-// =============================================
+// =====================================================
 
 const SocialButton = ({
     icon,
     name,
     onClick,
 }) => {
-
     return (
-
         <button
             type="button"
             onClick={onClick}
             className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-slate-200 text-slate-700 font-medium hover:bg-slate-50 hover:border-slate-300 transition"
         >
-
             <span className="font-bold">
                 {icon}
             </span>
@@ -648,11 +945,8 @@ const SocialButton = ({
             <span className="text-sm">
                 {name}
             </span>
-
         </button>
-
     );
 };
-
 
 export default Login;

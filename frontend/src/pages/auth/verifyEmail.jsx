@@ -274,7 +274,7 @@ const VerifyEmail = () => {
                                     "
                                 >
                                     <img
-                                        src="../../../public/pcs_logo.jpg"
+                                        src="/pcs_logo.jpg"
                                         alt="PCS Global"
                                         className="w-full h-full object-contain bg-white rounded-full p-2"
                                     />

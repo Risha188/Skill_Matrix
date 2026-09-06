@@ -192,7 +192,7 @@ const ResetPassword = () => {
                     <div className="mb-8">
 
                         <img
-                            src="../../../public/pcs_logo.jpg"
+                            src="/pcs_logo.jpg"
                             alt="PCS Global"
                             className="w-24 h-24 object-contain bg-white rounded-full p-2"
                         />

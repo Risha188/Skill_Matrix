@@ -250,7 +250,7 @@ const VerifyResetCode = () => {
                             <div className="inline-flex w-20 h-20 rounded-full bg-white border border-slate-200 items-center justify-center mb-2 overflow-hidden">
 
                                 <img
-                                    src="../../../public/pcs_logo.jpg"
+                                    src="/pcs_logo.jpg"
                                     alt="PCS Global"
                                     className="w-full h-full rounded-full object-contain p-2"
                                 />

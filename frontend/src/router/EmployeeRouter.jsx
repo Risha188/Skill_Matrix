@@ -9,12 +9,12 @@ import {
 // Authentication Pages
 // ========================================
 
-import Login from "../pages/auth/login.jsx";
-import Registration from "../pages/auth/registration.jsx";
-import ForgotPassword from "../pages/auth/forgotPassword.jsx";
+import Login from "../pages/auth/Login.jsx";
+import Registration from "../pages/auth/Registration.jsx";
+import ForgotPassword from "../pages/auth/ForgotPassword.jsx";
 import VerifyEmail from "../pages/auth/VerifyEmail.jsx";
 import SetPassword from "../pages/auth/SetPassword.jsx";
-import VerifyResetCode from "../pages/auth/verifyResetCode.jsx";
+import VerifyResetCode from "../pages/auth/VerifyResetCode.jsx";
 import ResetPassword from "../pages/auth/ResetPassword.jsx";
 
 // ========================================

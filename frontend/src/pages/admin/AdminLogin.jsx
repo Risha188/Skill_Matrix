@@ -643,7 +643,7 @@ const AdminLogin = () => {
                             >
 
                                 <img
-                                    src="../../../public/pcs_logo.jpg"
+                                    src="/pcs_logo.jpg"
                                     alt="PCS Global"
                                     className="
                                         h-20

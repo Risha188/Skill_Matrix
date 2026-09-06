@@ -175,7 +175,7 @@ const AdminSidebar = () => {
                 >
 
                     <img
-                        src="/pcs_logo.jpg"
+                        src="../../public/pcs_logo.jpg"
                         alt="PCS Logo"
                         className="h-full w-full object-contain rounded-full"
                     />

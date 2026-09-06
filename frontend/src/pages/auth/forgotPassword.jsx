@@ -81,7 +81,7 @@ const ForgotPassword = () => {
 
                                 <div className="w-20 h-20 rounded-full bg-white/20 flex items-center justify-center text-2xl font-bold">
                                     <img
-                                        src="../../../public/pcs_logo.jpg"
+                                        src="/pcs_logo.jpg"
                                         alt="PCS Global"
                                         className="w-full h-full object-contain bg-white rounded-full p-2"
                                     />
