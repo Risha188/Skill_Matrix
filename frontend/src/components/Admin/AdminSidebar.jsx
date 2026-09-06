@@ -162,13 +162,13 @@ const AdminSidebar = () => {
                 <div
                     className="
                         flex
-                        h-10
-                        w-10
+                        h-12
+                        w-12
                         shrink-0
                         items-center
                         justify-center
                         overflow-hidden
-                        rounded-xl
+                        rounded-full
                         bg-white
                         shadow-lg
                     "
@@ -177,7 +177,7 @@ const AdminSidebar = () => {
                     <img
                         src="/pcs_logo.jpg"
                         alt="PCS Logo"
-                        className="h-full w-full object-contain"
+                        className="h-full w-full object-contain rounded-full"
                     />
 
                 </div>

@@ -1,19 +1,28 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 
-import App from "./App.jsx";
+import { RouterProvider } from "react-router-dom";
 
-// import { EmployeeProfileProvider } from "./context/EmployeeProfileContext.jsx";
+import router from "./router/appRouter.jsx";
+
 import { AdminProvider } from "./context/AdminContext.jsx";
 
 import "./index.css";
+import { EmployeeProfileProvider } from "./context/EmployeeProfileContext.jsx";
 
 ReactDOM.createRoot(
     document.getElementById("root")
 ).render(
     <React.StrictMode>
+
         <AdminProvider>
-            <App />
+            <EmployeeProfileProvider>
+                <RouterProvider
+                router={router}
+            />
+            </EmployeeProfileProvider>
+
         </AdminProvider>
+
     </React.StrictMode>
 );

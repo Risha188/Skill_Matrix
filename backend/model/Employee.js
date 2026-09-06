@@ -2,10 +2,18 @@ const mongoose = require("mongoose");
 
 const employeeSchema = new mongoose.Schema(
     {
+        userId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            required: true,
+            unique: true
+        },
+
         employeeId: {
             type: String,
             unique: true,
-            required: true
+            required: true,
+            trim: true
         },
 
         email: {
@@ -70,23 +78,23 @@ const employeeSchema = new mongoose.Schema(
             }
         ],
 
-       isFresher: {
-    type: Boolean,
-    default: false
-},
+        isFresher: {
+            type: Boolean,
+            default: false
+        },
 
-workExperience: [
-    {
-        companyName: String,
-        jobTitle: String,
-        employmentType: String,
-        workLocation: String,
-        startDate: Date,
-        endDate: Date,
-        currentlyWorking: Boolean,
-        jobDescription: String
-    }
-],
+        workExperience: [
+            {
+                companyName: String,
+                jobTitle: String,
+                employmentType: String,
+                workLocation: String,
+                startDate: Date,
+                endDate: Date,
+                currentlyWorking: Boolean,
+                jobDescription: String
+            }
+        ],
 
         bdmDetails: {
             nonTechnicalSkills: [String],
@@ -97,24 +105,16 @@ workExperience: [
             additionalInformation: String
         },
 
-        declaration: {
-            accepted: {
-                type: Boolean,
-                default: false
-            },
-
-            submittedAt: Date
-        },
-
         profileCompleted: {
             type: Boolean,
             default: false
         }
     },
-
     {
         timestamps: true
     }
 );
 
-module.exports = mongoose.model("Employee", employeeSchema);
+module.exports =
+    mongoose.models.Employee ||
+    mongoose.model("Employee", employeeSchema);

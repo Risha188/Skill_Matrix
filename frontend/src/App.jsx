@@ -1,14 +1,10 @@
+import React from "react";
 import { RouterProvider } from "react-router-dom";
-
-import AdminRouter from "./router/AdminRouter";
-// import EmployeeRouter from "./router/EmployeeRouter";
+import router from "./router/appRouter.jsx";
+import "./index.css";
 
 const App = () => {
-    return (
-        <RouterProvider
-            router={AdminRouter}
-        />
-    );
+    return <RouterProvider router={router} />;
 };
 
 export default App;

@@ -1,15 +1,27 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+
 import { markSectionCompleted } from "../../utils/profileProgress.js";
 import API from "../../utils/api.js";
 import { useEmployeeProfile } from "../../context/EmployeeProfileContext";
 
+
 const Address = () => {
+
     const navigate = useNavigate();
 
-    const { profile, updateSection } = useEmployeeProfile();
+    const {
+        profile,
+        updateSection,
+    } = useEmployeeProfile();
+
+
+    // ==========================================================
+    // DEFAULT ADDRESS
+    // ==========================================================
 
     const defaultAddress = {
+
         currentAddress: "",
         currentCity: "",
         currentState: "",
@@ -25,291 +37,754 @@ const Address = () => {
         permanentCountry: "India",
     };
 
-    const [address, setAddress] = useState({
-        ...defaultAddress,
-        ...(profile.address || {}),
-    });
 
-    const [errors, setErrors] = useState({});
+    // ==========================================================
+    // STATE
+    // ==========================================================
 
-    // =========================
-    // HANDLE CHANGE
-    // =========================
+    const [address, setAddress] =
+        useState(defaultAddress);
+
+    const [errors, setErrors] =
+        useState({});
+
+    const [saving, setSaving] =
+        useState(false);
+
+
+    // ==========================================================
+    // LOAD EXISTING ADDRESS
+    // ==========================================================
+
+    useEffect(() => {
+
+        if (!profile?.address) {
+            return;
+        }
+
+
+        const current =
+            profile.address.current || {};
+
+        const permanent =
+            profile.address.permanent || {};
+
+
+        const loadedAddress = {
+
+            currentAddress:
+                current.address || "",
+
+            currentCity:
+                current.city || "",
+
+            currentState:
+                current.state || "",
+
+            currentPincode:
+                current.pincode || "",
+
+            currentCountry:
+                current.country || "India",
+
+
+            sameAsCurrent:
+                profile.address.sameAsCurrent !== undefined
+                    ? Boolean(
+                        profile.address.sameAsCurrent
+                    )
+                    : false,
+
+
+            permanentAddress:
+                permanent.address || "",
+
+            permanentCity:
+                permanent.city || "",
+
+            permanentState:
+                permanent.state || "",
+
+            permanentPincode:
+                permanent.pincode || "",
+
+            permanentCountry:
+                permanent.country || "India",
+        };
+
+
+        console.log(
+            "================================="
+        );
+
+        console.log(
+            "LOADING EXISTING ADDRESS"
+        );
+
+        console.log(
+            "Employee profile:",
+            profile
+        );
+
+        console.log(
+            "Current address:",
+            current
+        );
+
+        console.log(
+            "Permanent address:",
+            permanent
+        );
+
+        console.log(
+            "Mapped address:",
+            loadedAddress
+        );
+
+        console.log(
+            "================================="
+        );
+
+
+        setAddress(
+            loadedAddress
+        );
+
+        setErrors({});
+
+    }, [profile]);
+
+
+    // ==========================================================
+    // HANDLE INPUT CHANGE
+    // ==========================================================
+
     const handleChange = (e) => {
-        const { name, value, type, checked } = e.target;
+
+        const {
+            name,
+            value,
+            type,
+            checked,
+        } = e.target;
+
 
         setAddress((prev) => ({
             ...prev,
-            [name]: type === "checkbox" ? checked : value,
+
+            [name]:
+                type === "checkbox"
+                    ? checked
+                    : value,
         }));
 
-        // Remove error while correcting field
+
         setErrors((prev) => ({
             ...prev,
+
             [name]: "",
         }));
+
+
+        // If same-as-current is selected,
+        // clear permanent errors.
+
+        if (
+            name === "sameAsCurrent" &&
+            checked
+        ) {
+
+            setErrors((prev) => {
+
+                const updated = {
+                    ...prev,
+                };
+
+                delete updated.permanentAddress;
+                delete updated.permanentCity;
+                delete updated.permanentState;
+                delete updated.permanentPincode;
+                delete updated.permanentCountry;
+
+                return updated;
+            });
+        }
     };
 
-    // =========================
-    // VALIDATE ADDRESS
-    // =========================
+
+    // ==========================================================
+    // VALIDATE FORM
+    // ==========================================================
+
     const validateForm = () => {
+
         const newErrors = {};
 
-        // =========================
+
+        // ======================================================
         // CURRENT ADDRESS
-        // =========================
+        // ======================================================
+
         const currentAddress =
             address.currentAddress?.trim();
 
+
         if (!currentAddress) {
+
             newErrors.currentAddress =
                 "Current address is required";
-        } else if (currentAddress.length < 5) {
+
+        } else if (
+            currentAddress.length < 5
+        ) {
+
             newErrors.currentAddress =
                 "Current address must be at least 5 characters";
-        } else if (currentAddress.length > 300) {
+
+        } else if (
+            currentAddress.length > 300
+        ) {
+
             newErrors.currentAddress =
                 "Current address cannot exceed 300 characters";
         }
 
-        // =========================
+
+        // ======================================================
         // CURRENT CITY
-        // =========================
+        // ======================================================
+
         const currentCity =
             address.currentCity?.trim();
 
+
         if (!currentCity) {
+
             newErrors.currentCity =
                 "Current city is required";
-        } else if (currentCity.length < 2) {
+
+        } else if (
+            currentCity.length < 2
+        ) {
+
             newErrors.currentCity =
                 "City must be at least 2 characters";
-        } else if (!/^[A-Za-z\s.-]+$/.test(currentCity)) {
+
+        } else if (
+            !/^[A-Za-z\s.-]+$/.test(
+                currentCity
+            )
+        ) {
+
             newErrors.currentCity =
                 "City can contain only letters";
         }
 
-        // =========================
+
+        // ======================================================
         // CURRENT STATE
-        // =========================
+        // ======================================================
+
         const currentState =
             address.currentState?.trim();
 
+
         if (!currentState) {
+
             newErrors.currentState =
                 "Current state is required";
-        } else if (currentState.length < 2) {
+
+        } else if (
+            currentState.length < 2
+        ) {
+
             newErrors.currentState =
                 "State must be at least 2 characters";
-        } else if (!/^[A-Za-z\s.-]+$/.test(currentState)) {
+
+        } else if (
+            !/^[A-Za-z\s.-]+$/.test(
+                currentState
+            )
+        ) {
+
             newErrors.currentState =
                 "State can contain only letters";
         }
 
-        // =========================
+
+        // ======================================================
         // CURRENT PINCODE
-        // =========================
+        // ======================================================
+
         const currentPincode =
             address.currentPincode?.trim();
 
+
         if (!currentPincode) {
+
             newErrors.currentPincode =
                 "Current pincode is required";
-        } else if (!/^[1-9][0-9]{5}$/.test(currentPincode)) {
+
+        } else if (
+            !/^[1-9][0-9]{5}$/.test(
+                currentPincode
+            )
+        ) {
+
             newErrors.currentPincode =
                 "Pincode must be exactly 6 digits";
         }
 
-        // =========================
+
+        // ======================================================
         // CURRENT COUNTRY
-        // =========================
+        // ======================================================
+
         const currentCountry =
             address.currentCountry?.trim();
 
+
         if (!currentCountry) {
+
             newErrors.currentCountry =
                 "Current country is required";
-        } else if (currentCountry.length < 2) {
+
+        } else if (
+            currentCountry.length < 2
+        ) {
+
             newErrors.currentCountry =
                 "Enter a valid country";
         }
 
-        // =========================
+
+        // ======================================================
         // PERMANENT ADDRESS
-        // Only validate if checkbox
-        // is NOT selected
-        // =========================
+        // ======================================================
+
         if (!address.sameAsCurrent) {
 
             const permanentAddress =
                 address.permanentAddress?.trim();
 
+
             if (!permanentAddress) {
+
                 newErrors.permanentAddress =
                     "Permanent address is required";
-            } else if (permanentAddress.length < 5) {
+
+            } else if (
+                permanentAddress.length < 5
+            ) {
+
                 newErrors.permanentAddress =
                     "Permanent address must be at least 5 characters";
-            } else if (permanentAddress.length > 300) {
+
+            } else if (
+                permanentAddress.length > 300
+            ) {
+
                 newErrors.permanentAddress =
                     "Permanent address cannot exceed 300 characters";
             }
 
-            // =========================
+
+            // ==================================================
             // PERMANENT CITY
-            // =========================
+            // ==================================================
+
             const permanentCity =
                 address.permanentCity?.trim();
 
+
             if (!permanentCity) {
+
                 newErrors.permanentCity =
                     "Permanent city is required";
-            } else if (permanentCity.length < 2) {
+
+            } else if (
+                permanentCity.length < 2
+            ) {
+
                 newErrors.permanentCity =
                     "City must be at least 2 characters";
+
             } else if (
-                !/^[A-Za-z\s.-]+$/.test(permanentCity)
+                !/^[A-Za-z\s.-]+$/.test(
+                    permanentCity
+                )
             ) {
+
                 newErrors.permanentCity =
                     "City can contain only letters";
             }
 
-            // =========================
+
+            // ==================================================
             // PERMANENT STATE
-            // =========================
+            // ==================================================
+
             const permanentState =
                 address.permanentState?.trim();
 
+
             if (!permanentState) {
+
                 newErrors.permanentState =
                     "Permanent state is required";
-            } else if (permanentState.length < 2) {
+
+            } else if (
+                permanentState.length < 2
+            ) {
+
                 newErrors.permanentState =
                     "State must be at least 2 characters";
+
             } else if (
-                !/^[A-Za-z\s.-]+$/.test(permanentState)
+                !/^[A-Za-z\s.-]+$/.test(
+                    permanentState
+                )
             ) {
+
                 newErrors.permanentState =
                     "State can contain only letters";
             }
 
-            // =========================
+
+            // ==================================================
             // PERMANENT PINCODE
-            // =========================
+            // ==================================================
+
             const permanentPincode =
                 address.permanentPincode?.trim();
 
+
             if (!permanentPincode) {
+
                 newErrors.permanentPincode =
                     "Permanent pincode is required";
+
             } else if (
-                !/^[1-9][0-9]{5}$/.test(permanentPincode)
+                !/^[1-9][0-9]{5}$/.test(
+                    permanentPincode
+                )
             ) {
+
                 newErrors.permanentPincode =
                     "Pincode must be exactly 6 digits";
             }
 
-            // =========================
+
+            // ==================================================
             // PERMANENT COUNTRY
-            // =========================
+            // ==================================================
+
             const permanentCountry =
                 address.permanentCountry?.trim();
 
+
             if (!permanentCountry) {
+
                 newErrors.permanentCountry =
                     "Permanent country is required";
-            } else if (permanentCountry.length < 2) {
+
+            } else if (
+                permanentCountry.length < 2
+            ) {
+
                 newErrors.permanentCountry =
                     "Enter a valid country";
             }
         }
 
-        setErrors(newErrors);
 
-        return Object.keys(newErrors).length === 0;
+        setErrors(
+            newErrors
+        );
+
+
+        return (
+            Object.keys(
+                newErrors
+            ).length === 0
+        );
     };
 
-    // =========================
+
+    // ==========================================================
     // SUBMIT
-    // =========================
+    // ==========================================================
+
     const handleSubmit = async (e) => {
+
         e.preventDefault();
 
-        // Validate first
-        const isValid = validateForm();
+
+        // Prevent double submit
+
+        if (saving) {
+            return;
+        }
+
+
+        // Validate
+
+        const isValid =
+            validateForm();
+
 
         if (!isValid) {
             return;
         }
 
-        try {
-            const employeeId =
-                localStorage.getItem("employeeId");
 
-            if (!employeeId) {
-                alert(
-                    "Employee ID not found. Please complete Personal Information first."
+        try {
+
+            setSaving(true);
+
+
+            // ==================================================
+            // IMPORTANT:
+            // GET EMPLOYEE ID FROM SESSION STORAGE
+            // ==================================================
+
+            const employeeId =
+                sessionStorage.getItem(
+                    "employeeId"
                 );
+
+
+            const employeeToken =
+                sessionStorage.getItem(
+                    "employeeToken"
+                );
+
+
+            console.log(
+                "================================="
+            );
+
+            console.log(
+                "ADDRESS SAVE"
+            );
+
+            console.log(
+                "Employee ID:",
+                employeeId
+            );
+
+            console.log(
+                "Employee token:",
+                employeeToken
+                    ? "Available"
+                    : "Missing"
+            );
+
+            console.log(
+                "================================="
+            );
+
+
+            // ==================================================
+            // CHECK TOKEN
+            // ==================================================
+
+            if (!employeeToken) {
+
+                alert(
+                    "Employee session expired. Please login again."
+                );
+
+                navigate(
+                    "/login",
+                    {
+                        replace: true,
+                    }
+                );
+
                 return;
             }
 
+
+            // ==================================================
+            // CHECK EMPLOYEE ID
+            // ==================================================
+
+            if (!employeeId) {
+
+                alert(
+                    "Employee ID not found. Please login again."
+                );
+
+                navigate(
+                    "/login",
+                    {
+                        replace: true,
+                    }
+                );
+
+                return;
+            }
+
+
+            // ==================================================
+            // FINAL ADDRESS PAYLOAD
+            // ==================================================
+
             const finalAddress = {
-                ...address,
 
-                permanentAddress: address.sameAsCurrent
-                    ? address.currentAddress
-                    : address.permanentAddress,
+                currentAddress:
+                    address.currentAddress?.trim() ||
+                    "",
 
-                permanentCity: address.sameAsCurrent
-                    ? address.currentCity
-                    : address.permanentCity,
+                currentCity:
+                    address.currentCity?.trim() ||
+                    "",
 
-                permanentState: address.sameAsCurrent
-                    ? address.currentState
-                    : address.permanentState,
+                currentState:
+                    address.currentState?.trim() ||
+                    "",
 
-                permanentPincode: address.sameAsCurrent
-                    ? address.currentPincode
-                    : address.permanentPincode,
+                currentPincode:
+                    address.currentPincode?.trim() ||
+                    "",
 
-                permanentCountry: address.sameAsCurrent
-                    ? address.currentCountry
-                    : address.permanentCountry,
+                currentCountry:
+                    address.currentCountry?.trim() ||
+                    "India",
+
+
+                sameAsCurrent:
+                    Boolean(
+                        address.sameAsCurrent
+                    ),
+
+
+                permanentAddress:
+                    address.sameAsCurrent
+                        ? address.currentAddress?.trim() || ""
+                        : address.permanentAddress?.trim() || "",
+
+
+                permanentCity:
+                    address.sameAsCurrent
+                        ? address.currentCity?.trim() || ""
+                        : address.permanentCity?.trim() || "",
+
+
+                permanentState:
+                    address.sameAsCurrent
+                        ? address.currentState?.trim() || ""
+                        : address.permanentState?.trim() || "",
+
+
+                permanentPincode:
+                    address.sameAsCurrent
+                        ? address.currentPincode?.trim() || ""
+                        : address.permanentPincode?.trim() || "",
+
+
+                permanentCountry:
+                    address.sameAsCurrent
+                        ? address.currentCountry?.trim() || "India"
+                        : address.permanentCountry?.trim() || "India",
             };
 
-            // Save address to backend
-            const response = await API.put(
-                `/employees/${employeeId}/address`,
+
+            console.log(
+                "================================="
+            );
+
+            console.log(
+                "SAVING ADDRESS"
+            );
+
+            console.log(
+                "Employee ID:",
+                employeeId
+            );
+
+            console.log(
+                "Payload:",
                 finalAddress
             );
 
             console.log(
-                "Address saved:",
+                "================================="
+            );
+
+
+            // ==================================================
+            // UPDATE EXISTING EMPLOYEE
+            // ==================================================
+
+            const response =
+                await API.put(
+                    `/employees/${encodeURIComponent(
+                        employeeId
+                    )}/address`,
+                    finalAddress
+                );
+
+
+            console.log(
+                "Address saved successfully:",
                 response.data
             );
 
-            // Save address in React Context
+
+            // ==================================================
+            // UPDATE REACT CONTEXT
+            // ==================================================
+
             updateSection(
                 "address",
                 finalAddress
             );
 
-            // Mark section completed
-            markSectionCompleted("address");
 
-            // Go to next page
-            navigate("/employee/skills");
+            // ==================================================
+            // MARK SECTION COMPLETED
+            // ==================================================
+
+            markSectionCompleted(
+                "address"
+            );
+
+
+            // ==================================================
+            // NEXT PAGE
+            // ==================================================
+
+            navigate(
+                "/employee/skills"
+            );
+
 
         } catch (error) {
+
+            console.error(
+                "================================="
+            );
+
+            console.error(
+                "ADDRESS SAVE ERROR"
+            );
+
             console.error(
                 "STATUS:",
-                error.response?.status
+                error?.response?.status
             );
 
             console.error(
                 "DATA:",
-                error.response?.data
+                error?.response?.data
+            );
+
+            console.error(
+                "MESSAGE:",
+                error?.response?.data?.message ||
+                error?.message
             );
 
             console.error(
@@ -317,31 +792,106 @@ const Address = () => {
                 error
             );
 
+            console.error(
+                "================================="
+            );
+
+
+            if (
+                error?.response?.status === 401
+            ) {
+
+                alert(
+                    "Your employee session has expired. Please login again."
+                );
+
+                sessionStorage.removeItem(
+                    "employeeToken"
+                );
+
+                sessionStorage.removeItem(
+                    "employeeUser"
+                );
+
+                sessionStorage.removeItem(
+                    "employeeUserId"
+                );
+
+                sessionStorage.removeItem(
+                    "employeeUserEmail"
+                );
+
+                sessionStorage.removeItem(
+                    "employeeUserRole"
+                );
+
+                sessionStorage.removeItem(
+                    "employeeAuthenticated"
+                );
+
+                sessionStorage.removeItem(
+                    "employeeId"
+                );
+
+
+                navigate(
+                    "/login",
+                    {
+                        replace: true,
+                    }
+                );
+
+                return;
+            }
+
+
             alert(
-                error.response?.data?.message ||
+                error?.response?.data?.message ||
+                error?.response?.data?.error ||
                 "Failed to save address details"
             );
+
+        } finally {
+
+            setSaving(false);
         }
     };
 
+
+    // ==========================================================
+    // INPUT CLASSES
+    // ==========================================================
+
     const inputClass =
-        "w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100";
+        "w-full min-w-0 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100";
+
 
     const errorInputClass =
-        "w-full rounded-lg border border-red-500 bg-white px-4 py-2.5 text-sm text-gray-700 outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-100";
+        "w-full min-w-0 rounded-lg border border-red-500 bg-white px-4 py-2.5 text-sm text-gray-700 outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-100";
+
 
     const labelClass =
         "mb-2 block text-sm font-medium text-gray-700";
 
+
+    // ==========================================================
+    // UI
+    // ==========================================================
+
     return (
-        <div className="min-h-screen bg-gray-50 px-6 py-8">
 
-            <div className="mx-auto max-w-5xl">
+        <div className="min-h-screen w-full overflow-x-hidden bg-gray-50 px-3 py-5 sm:px-4 sm:py-6 md:px-6 md:py-8">
 
-                {/* Header */}
+            <div className="mx-auto w-full max-w-5xl">
+
+
+                {/* ==================================================
+                    HEADER
+                ================================================== */}
+
                 <div className="mb-8">
 
-                    <h2 className="text-2xl font-bold text-gray-800">
+                    <h2 className="text-xl font-bold text-gray-800 sm:text-2xl">
                         Address
                     </h2>
 
@@ -351,24 +901,33 @@ const Address = () => {
 
                 </div>
 
-                {/* Form */}
+
+                {/* ==================================================
+                    FORM
+                ================================================== */}
+
                 <form
                     onSubmit={handleSubmit}
-                    className="rounded-xl bg-white p-6 shadow-md"
+                    className="w-full rounded-xl bg-white p-4 shadow-md sm:p-6"
                 >
 
-                    {/* =========================
+
+                    {/* ==================================================
                         CURRENT ADDRESS
-                    ========================= */}
+                    ================================================== */}
+
                     <div className="mb-8">
 
-                        <h3 className="mb-5 text-lg font-semibold text-gray-800">
+                        <h3 className="mb-5 text-base font-semibold text-gray-800 sm:text-lg">
                             Current Address
                         </h3>
 
-                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+
+                        <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2 md:gap-6">
+
 
                             {/* Current Address */}
+
                             <div className="md:col-span-2">
 
                                 <label
@@ -377,29 +936,41 @@ const Address = () => {
                                     Address
                                 </label>
 
+
                                 <textarea
                                     name="currentAddress"
-                                    value={address.currentAddress}
-                                    onChange={handleChange}
+                                    value={
+                                        address.currentAddress
+                                    }
+                                    onChange={
+                                        handleChange
+                                    }
                                     placeholder="Enter your current address"
                                     rows="3"
                                     maxLength={300}
-                                    className={`resize-none ${
+                                    className={
                                         errors.currentAddress
                                             ? errorInputClass
                                             : inputClass
-                                    }`}
+                                    }
                                 />
 
+
                                 {errors.currentAddress && (
+
                                     <p className="mt-1 text-sm text-red-500">
-                                        {errors.currentAddress}
+                                        {
+                                            errors.currentAddress
+                                        }
                                     </p>
+
                                 )}
 
                             </div>
 
+
                             {/* Current City */}
+
                             <div>
 
                                 <label
@@ -408,11 +979,16 @@ const Address = () => {
                                     City
                                 </label>
 
+
                                 <input
                                     type="text"
                                     name="currentCity"
-                                    value={address.currentCity}
-                                    onChange={handleChange}
+                                    value={
+                                        address.currentCity
+                                    }
+                                    onChange={
+                                        handleChange
+                                    }
                                     placeholder="Enter city"
                                     maxLength={50}
                                     className={
@@ -422,15 +998,22 @@ const Address = () => {
                                     }
                                 />
 
+
                                 {errors.currentCity && (
+
                                     <p className="mt-1 text-sm text-red-500">
-                                        {errors.currentCity}
+                                        {
+                                            errors.currentCity
+                                        }
                                     </p>
+
                                 )}
 
                             </div>
 
+
                             {/* Current State */}
+
                             <div>
 
                                 <label
@@ -439,11 +1022,16 @@ const Address = () => {
                                     State
                                 </label>
 
+
                                 <input
                                     type="text"
                                     name="currentState"
-                                    value={address.currentState}
-                                    onChange={handleChange}
+                                    value={
+                                        address.currentState
+                                    }
+                                    onChange={
+                                        handleChange
+                                    }
                                     placeholder="Enter state"
                                     maxLength={50}
                                     className={
@@ -453,15 +1041,22 @@ const Address = () => {
                                     }
                                 />
 
+
                                 {errors.currentState && (
+
                                     <p className="mt-1 text-sm text-red-500">
-                                        {errors.currentState}
+                                        {
+                                            errors.currentState
+                                        }
                                     </p>
+
                                 )}
 
                             </div>
 
+
                             {/* Current Pincode */}
+
                             <div>
 
                                 <label
@@ -470,11 +1065,16 @@ const Address = () => {
                                     Pincode
                                 </label>
 
+
                                 <input
                                     type="text"
                                     name="currentPincode"
-                                    value={address.currentPincode}
-                                    onChange={handleChange}
+                                    value={
+                                        address.currentPincode
+                                    }
+                                    onChange={
+                                        handleChange
+                                    }
                                     placeholder="Enter 6 digit pincode"
                                     maxLength={6}
                                     inputMode="numeric"
@@ -485,15 +1085,22 @@ const Address = () => {
                                     }
                                 />
 
+
                                 {errors.currentPincode && (
+
                                     <p className="mt-1 text-sm text-red-500">
-                                        {errors.currentPincode}
+                                        {
+                                            errors.currentPincode
+                                        }
                                     </p>
+
                                 )}
 
                             </div>
 
+
                             {/* Current Country */}
+
                             <div>
 
                                 <label
@@ -502,11 +1109,16 @@ const Address = () => {
                                     Country
                                 </label>
 
+
                                 <input
                                     type="text"
                                     name="currentCountry"
-                                    value={address.currentCountry}
-                                    onChange={handleChange}
+                                    value={
+                                        address.currentCountry
+                                    }
+                                    onChange={
+                                        handleChange
+                                    }
                                     placeholder="Enter country"
                                     maxLength={50}
                                     className={
@@ -516,20 +1128,28 @@ const Address = () => {
                                     }
                                 />
 
+
                                 {errors.currentCountry && (
+
                                     <p className="mt-1 text-sm text-red-500">
-                                        {errors.currentCountry}
+                                        {
+                                            errors.currentCountry
+                                        }
                                     </p>
+
                                 )}
 
                             </div>
 
                         </div>
+
                     </div>
 
-                    {/* =========================
+
+                    {/* ==================================================
                         SAME AS CURRENT
-                    ========================= */}
+                    ================================================== */}
+
                     <div className="mb-8 border-t border-gray-200 pt-6">
 
                         <label className="flex cursor-pointer items-center gap-3">
@@ -537,10 +1157,15 @@ const Address = () => {
                             <input
                                 type="checkbox"
                                 name="sameAsCurrent"
-                                checked={address.sameAsCurrent}
-                                onChange={handleChange}
+                                checked={
+                                    address.sameAsCurrent
+                                }
+                                onChange={
+                                    handleChange
+                                }
                                 className="h-4 w-4"
                             />
+
 
                             <span className="text-sm font-medium text-gray-700">
                                 Permanent address is same as current address
@@ -550,19 +1175,25 @@ const Address = () => {
 
                     </div>
 
-                    {/* =========================
+
+                    {/* ==================================================
                         PERMANENT ADDRESS
-                    ========================= */}
+                    ================================================== */}
+
                     {!address.sameAsCurrent && (
+
                         <div className="mb-8">
 
-                            <h3 className="mb-5 text-lg font-semibold text-gray-800">
+                            <h3 className="mb-5 text-base font-semibold text-gray-800 sm:text-lg">
                                 Permanent Address
                             </h3>
 
-                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+
+                            <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2 md:gap-6">
+
 
                                 {/* Permanent Address */}
+
                                 <div className="md:col-span-2">
 
                                     <label
@@ -571,29 +1202,41 @@ const Address = () => {
                                         Address
                                     </label>
 
+
                                     <textarea
                                         name="permanentAddress"
-                                        value={address.permanentAddress}
-                                        onChange={handleChange}
+                                        value={
+                                            address.permanentAddress
+                                        }
+                                        onChange={
+                                            handleChange
+                                        }
                                         placeholder="Enter your permanent address"
                                         rows="3"
                                         maxLength={300}
-                                        className={`resize-none ${
+                                        className={
                                             errors.permanentAddress
                                                 ? errorInputClass
                                                 : inputClass
-                                        }`}
+                                        }
                                     />
 
+
                                     {errors.permanentAddress && (
+
                                         <p className="mt-1 text-sm text-red-500">
-                                            {errors.permanentAddress}
+                                            {
+                                                errors.permanentAddress
+                                            }
                                         </p>
+
                                     )}
 
                                 </div>
 
+
                                 {/* Permanent City */}
+
                                 <div>
 
                                     <label
@@ -602,11 +1245,16 @@ const Address = () => {
                                         City
                                     </label>
 
+
                                     <input
                                         type="text"
                                         name="permanentCity"
-                                        value={address.permanentCity}
-                                        onChange={handleChange}
+                                        value={
+                                            address.permanentCity
+                                        }
+                                        onChange={
+                                            handleChange
+                                        }
                                         placeholder="Enter city"
                                         maxLength={50}
                                         className={
@@ -616,15 +1264,22 @@ const Address = () => {
                                         }
                                     />
 
+
                                     {errors.permanentCity && (
+
                                         <p className="mt-1 text-sm text-red-500">
-                                            {errors.permanentCity}
+                                            {
+                                                errors.permanentCity
+                                            }
                                         </p>
+
                                     )}
 
                                 </div>
 
+
                                 {/* Permanent State */}
+
                                 <div>
 
                                     <label
@@ -633,11 +1288,16 @@ const Address = () => {
                                         State
                                     </label>
 
+
                                     <input
                                         type="text"
                                         name="permanentState"
-                                        value={address.permanentState}
-                                        onChange={handleChange}
+                                        value={
+                                            address.permanentState
+                                        }
+                                        onChange={
+                                            handleChange
+                                        }
                                         placeholder="Enter state"
                                         maxLength={50}
                                         className={
@@ -647,15 +1307,22 @@ const Address = () => {
                                         }
                                     />
 
+
                                     {errors.permanentState && (
+
                                         <p className="mt-1 text-sm text-red-500">
-                                            {errors.permanentState}
+                                            {
+                                                errors.permanentState
+                                            }
                                         </p>
+
                                     )}
 
                                 </div>
 
+
                                 {/* Permanent Pincode */}
+
                                 <div>
 
                                     <label
@@ -664,11 +1331,16 @@ const Address = () => {
                                         Pincode
                                     </label>
 
+
                                     <input
                                         type="text"
                                         name="permanentPincode"
-                                        value={address.permanentPincode}
-                                        onChange={handleChange}
+                                        value={
+                                            address.permanentPincode
+                                        }
+                                        onChange={
+                                            handleChange
+                                        }
                                         placeholder="Enter 6 digit pincode"
                                         maxLength={6}
                                         inputMode="numeric"
@@ -679,15 +1351,22 @@ const Address = () => {
                                         }
                                     />
 
+
                                     {errors.permanentPincode && (
+
                                         <p className="mt-1 text-sm text-red-500">
-                                            {errors.permanentPincode}
+                                            {
+                                                errors.permanentPincode
+                                            }
                                         </p>
+
                                     )}
 
                                 </div>
 
+
                                 {/* Permanent Country */}
+
                                 <div>
 
                                     <label
@@ -696,11 +1375,16 @@ const Address = () => {
                                         Country
                                     </label>
 
+
                                     <input
                                         type="text"
                                         name="permanentCountry"
-                                        value={address.permanentCountry}
-                                        onChange={handleChange}
+                                        value={
+                                            address.permanentCountry
+                                        }
+                                        onChange={
+                                            handleChange
+                                        }
                                         placeholder="Enter country"
                                         maxLength={50}
                                         className={
@@ -710,26 +1394,46 @@ const Address = () => {
                                         }
                                     />
 
+
                                     {errors.permanentCountry && (
+
                                         <p className="mt-1 text-sm text-red-500">
-                                            {errors.permanentCountry}
+                                            {
+                                                errors.permanentCountry
+                                            }
                                         </p>
+
                                     )}
 
                                 </div>
 
                             </div>
+
                         </div>
+
                     )}
 
-                    {/* Button */}
-                    <div className="flex justify-end border-t border-gray-200 pt-6">
+
+                    {/* ==================================================
+                        BUTTON
+                    ================================================== */}
+
+                    <div className="flex flex-col gap-3 border-t border-gray-200 pt-6 sm:flex-row sm:justify-end">
 
                         <button
                             type="submit"
-                            className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
+                            disabled={saving}
+                            className={`w-full rounded-lg px-6 py-2.5 text-sm font-semibold text-white sm:w-auto ${
+                                saving
+                                    ? "cursor-not-allowed bg-blue-400"
+                                    : "bg-blue-600 hover:bg-blue-700"
+                            }`}
                         >
-                            Save & Next
+
+                            {saving
+                                ? "Saving..."
+                                : "Save & Next"}
+
                         </button>
 
                     </div>
@@ -737,8 +1441,10 @@ const Address = () => {
                 </form>
 
             </div>
+
         </div>
     );
 };
+
 
 export default Address;

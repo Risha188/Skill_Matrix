@@ -350,12 +350,12 @@ const AdminLayout = () => {
                     <div
                         className="
                             flex
-                            h-10
-                            w-10
+                            h-14
+                            w-14
                             shrink-0
                             items-center
                             justify-center
-                            rounded-xl
+                            rounded-full
                             bg-white
                             text-sm
                             font-bold
@@ -368,7 +368,7 @@ const AdminLayout = () => {
                         <img
                         src="../../../public/pcs_logo.jpg"
                         alt="PCS Logo"
-                        className="h-full w-full object-contain"
+                        className="h-full w-full rounded-full object-contain"
                     />
                     </div>
 
