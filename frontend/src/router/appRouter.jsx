@@ -11,10 +11,10 @@ import {
 
 import Login from "../pages/auth/login.jsx";
 import Registration from "../pages/auth/registration.jsx";
-import ForgotPassword from "../pages/auth/forgotPassword.jsx";
-import VerifyEmail from "../pages/auth/VerifyEmail.jsx";
-import SetPassword from "../pages/auth/SetPassword.jsx";
-import VerifyResetCode from "../pages/auth/verifyResetCode.jsx";
+import forgotPassword from "../pages/auth/forgotPassword.jsx";
+import verifyEmail from "../pages/auth/verifyEmail.jsx";
+import setPassword from "../pages/auth/setPassword.jsx";
+import verifyResetCode from "../pages/auth/verifyResetCode.jsx";
 import ResetPassword from "../pages/auth/ResetPassword.jsx";
 
 // =========================================================
@@ -97,12 +97,12 @@ const router = createBrowserRouter(
 
             <Route
                 path="/forgot-password"
-                element={<ForgotPassword />}
+                element={<forgotPassword />}
             />
 
             <Route
                 path="/verify-reset-code"
-                element={<VerifyResetCode />}
+                element={<verifyResetCode />}
             />
 
             <Route
@@ -112,12 +112,12 @@ const router = createBrowserRouter(
 
             <Route
                 path="/verify-email"
-                element={<VerifyEmail />}
+                element={<verifyEmail />}
             />
 
             <Route
                 path="/set-password"
-                element={<SetPassword />}
+                element={<setPassword />}
             />
 
             {/* =================================================
