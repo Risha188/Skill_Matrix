@@ -47,3 +47,7 @@ Thumbs.db
 
 # Testing
 .nyc_output/
+node_modules/
+.env
+.env.*
+!.env.example
