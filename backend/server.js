@@ -15,6 +15,8 @@ const allowedOrigins = new Set([
   'http://localhost:5173',
   'http://localhost:5174',
   'https://skill-matrix-frontend-seven.vercel.app',
+  'https://skill-matrix-frontend-parna-das-projects-8f9a10f4.vercel.app',
+  'https://skill-matrix-frontend-git-main-parna-das-projects-8f9a10f4.vercel.app',
   'https://skill-matrix-frontend-ipyy464fe-parna-das-projects-8f9a10f4.vercel.app',
   'https://skill-matrix-frontend-5z8hdmlxy-parna-das-projects-8f9a10f4.vercel.app',
   ...configuredOrigins,
