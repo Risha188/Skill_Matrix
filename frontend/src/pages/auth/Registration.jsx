@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { registerUser } from "../../service/authService";
@@ -14,10 +15,7 @@ const Registration = () => {
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
 
-    /* =====================================================
-       HANDLE INPUT CHANGE
-    ===================================================== */
-
+    // Handle input changes
     const handleChange = (e) => {
         const { name, value } = e.target;
 
@@ -26,20 +24,41 @@ const Registration = () => {
             [name]: value,
         }));
 
-        // Clear messages while user is typing
-        if (error) {
-            setError("");
-        }
-
-        if (success) {
-            setSuccess("");
-        }
+        setError("");
+        setSuccess("");
     };
 
-    /* =====================================================
-       HANDLE REGISTRATION
-    ===================================================== */
+    // Validate form
+    const validateForm = () => {
+        const fullName = formData.fullName.trim();
+        const email = formData.email.trim().toLowerCase();
 
+        if (!fullName) {
+            return "Please enter your full name.";
+        }
+
+        if (fullName.length < 2) {
+            return "Full name must contain at least 2 characters.";
+        }
+
+        if (!/^[a-zA-Z\s.'-]+$/.test(fullName)) {
+            return "Please enter a valid full name.";
+        }
+
+        if (!email) {
+            return "Please enter your email address.";
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        if (!emailRegex.test(email)) {
+            return "Please enter a valid email address.";
+        }
+
+        return "";
+    };
+
+    // Handle registration
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -48,147 +67,94 @@ const Registration = () => {
         setError("");
         setSuccess("");
 
+        const validationError = validateForm();
+
+        if (validationError) {
+            setError(validationError);
+            return;
+        }
+
         const fullName = formData.fullName.trim();
         const email = formData.email.trim().toLowerCase();
-
-        /* =================================================
-           VALIDATION
-        ================================================= */
-
-        if (!fullName) {
-            setError("Please enter your full name.");
-            return;
-        }
-
-        if (fullName.length < 2) {
-            setError("Full name must contain at least 2 characters.");
-            return;
-        }
-
-        if (!email) {
-            setError("Please enter your email address.");
-            return;
-        }
-
-        // Basic email validation
-        const emailRegex =
-            /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-        if (!emailRegex.test(email)) {
-            setError("Please enter a valid email address.");
-            return;
-        }
-
-        /* =================================================
-           API REQUEST
-        ================================================= */
 
         try {
             setLoading(true);
 
-            console.log("=================================");
-            console.log("📝 EMPLOYEE REGISTRATION");
-            console.log("Full Name:", fullName);
-            console.log("Email:", email);
-            console.log("=================================");
-
-            const response = await registerUser({
+            // Send registration request
+            const data = await registerUser({
                 fullName,
                 email,
             });
 
-            const data = response?.data || {};
+            console.log("Registration response:", data);
 
-            console.log("✅ Registration Response:", data);
-
-            /* =================================================
-               SUCCESS
-            ================================================= */
-
-            if (data.success) {
-                const successMessage =
+            // Check backend response
+            if (data?.success === true) {
+                setSuccess(
                     data.message ||
-                    "Registration successful. Please verify your email.";
-
-                setSuccess(successMessage);
-
-                // Save email temporarily for verification page
-                localStorage.setItem(
-                    "verificationEmail",
-                    email
+                    "Registration successful. Please verify your email."
                 );
 
-                console.log(
-                    "📧 Verification email saved:",
-                    email
-                );
-
-                /*
-                 * Navigate after successful registration.
-                 *
-                 * Passing email through router state makes it
-                 * immediately available on VerifyEmail.jsx.
-                 */
+                // Navigate to email verification page
                 navigate("/verify-email", {
-                    state: {
-                        email,
-                    },
+                    state: { email },
                     replace: true,
                 });
 
                 return;
             }
 
-            /* =================================================
-               BACKEND RETURNED FAILURE
-            ================================================= */
-
             setError(
-                data.message ||
-                data.error ||
+                data?.message ||
+                data?.error ||
                 "Registration failed. Please try again."
             );
-        } catch (error) {
-            console.error("=================================");
-            console.error("❌ REGISTRATION ERROR");
+
+        } catch (err) {
             console.error(
-                error.response?.data ||
-                error.message ||
-                error
+                "Registration error:",
+                err.response?.data || err.message
             );
-            console.error("=================================");
 
-            /* =================================================
-               ERROR MESSAGE
-            ================================================= */
+            const status = err.response?.status;
+            const backendMessage =
+                err.response?.data?.message ||
+                err.response?.data?.error;
 
-            if (error.response?.status === 400) {
+            if (status === 400) {
                 setError(
-                    error.response?.data?.message ||
+                    backendMessage ||
                     "Invalid registration details."
                 );
-            } else if (error.response?.status === 409) {
+            } else if (status === 409) {
                 setError(
-                    error.response?.data?.message ||
+                    backendMessage ||
                     "An account with this email already exists."
                 );
-            } else if (error.response?.status === 403) {
+            } else if (status === 403) {
                 setError(
-                    error.response?.data?.message ||
+                    backendMessage ||
                     "Registration request was not authorized."
                 );
-            } else if (error.code === "ERR_NETWORK") {
+            } else if (status === 500) {
                 setError(
-                    "Unable to connect to the server. Please check your backend URL and CORS configuration."
+                    backendMessage ||
+                    "Server error. Please try again later."
+                );
+            } else if (
+                err.code === "ERR_NETWORK" ||
+                !err.response
+            ) {
+                setError(
+                    "Unable to connect to the server. Please check your backend connection."
                 );
             } else {
                 setError(
-                    error.response?.data?.message ||
-                    error.response?.data?.error ||
-                    error.message ||
+                    backendMessage ||
                     "Registration failed. Please try again."
                 );
             }
+
         } finally {
             setLoading(false);
         }
@@ -199,12 +165,8 @@ const Registration = () => {
 
             <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
 
-                {/* =================================================
-                    HEADER
-                ================================================= */}
-
+                {/* Header */}
                 <div className="text-center mb-8">
-
                     <h1 className="text-3xl font-bold text-slate-800">
                         Create Account
                     </h1>
@@ -212,14 +174,9 @@ const Registration = () => {
                     <p className="text-sm text-slate-500 mt-2">
                         Register your SkillMatrix account
                     </p>
-
                 </div>
 
-
-                {/* =================================================
-                    ERROR MESSAGE
-                ================================================= */}
-
+                {/* Error Message */}
                 {error && (
                     <div
                         role="alert"
@@ -229,11 +186,7 @@ const Registration = () => {
                     </div>
                 )}
 
-
-                {/* =================================================
-                    SUCCESS MESSAGE
-                ================================================= */}
-
+                {/* Success Message */}
                 {success && (
                     <div
                         role="status"
@@ -243,22 +196,15 @@ const Registration = () => {
                     </div>
                 )}
 
-
-                {/* =================================================
-                    REGISTRATION FORM
-                ================================================= */}
-
+                {/* Registration Form */}
                 <form
                     onSubmit={handleSubmit}
                     className="space-y-5"
+                    noValidate
                 >
 
-                    {/* =================================================
-                        FULL NAME
-                    ================================================= */}
-
+                    {/* Full Name */}
                     <div>
-
                         <label
                             htmlFor="fullName"
                             className="block text-sm font-medium text-slate-700 mb-2"
@@ -276,18 +222,13 @@ const Registration = () => {
                             autoComplete="name"
                             required
                             disabled={loading}
+                            maxLength={100}
                             className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-slate-50 disabled:cursor-not-allowed"
                         />
-
                     </div>
 
-
-                    {/* =================================================
-                        EMAIL
-                    ================================================= */}
-
+                    {/* Email */}
                     <div>
-
                         <label
                             htmlFor="email"
                             className="block text-sm font-medium text-slate-700 mb-2"
@@ -305,94 +246,63 @@ const Registration = () => {
                             autoComplete="email"
                             required
                             disabled={loading}
+                            maxLength={254}
                             className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-slate-50 disabled:cursor-not-allowed"
                         />
-
                     </div>
 
-
-                    {/* =================================================
-                        SUBMIT BUTTON
-                    ================================================= */}
-
+                    {/* Submit Button */}
                     <button
                         type="submit"
                         disabled={loading}
                         className="w-full rounded-lg bg-blue-600 py-3 font-semibold text-white transition hover:bg-blue-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
                     >
-
                         {loading ? (
                             <span className="flex items-center justify-center gap-2">
-
                                 <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-
                                 Creating Account...
-
                             </span>
                         ) : (
                             "Create Account"
                         )}
-
                     </button>
 
                 </form>
 
-
-                {/* =================================================
-                    LOGIN
-                ================================================= */}
-
+                {/* Login Link */}
                 <div className="text-center mt-6">
-
                     <p className="text-sm text-slate-500">
-
                         Already have an account?{" "}
-
                         <Link
                             to="/login"
                             className="font-semibold text-blue-600 hover:text-blue-700"
                         >
                             Login
                         </Link>
-
                     </p>
-
                 </div>
 
-
-                {/* =================================================
-                    ADMIN LOGIN
-                ================================================= */}
-
+                {/* Admin Login */}
                 <div className="text-center mt-4">
-
                     <Link
                         to="/admin"
                         className="text-sm text-slate-500 hover:text-blue-600"
                     >
                         Admin Login
                     </Link>
-
                 </div>
 
-
-                {/* =================================================
-                    HOME
-                ================================================= */}
-
+                {/* Home */}
                 <div className="text-center mt-4">
-
                     <Link
                         to="/"
                         className="text-sm text-slate-500 hover:text-blue-600"
                     >
                         ← Back to Home
                     </Link>
-
                 </div>
 
             </div>
-
         </div>
     );
 };

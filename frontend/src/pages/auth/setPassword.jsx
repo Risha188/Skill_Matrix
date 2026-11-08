@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+
+import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { setPassword } from "../../service/authService";
 
@@ -6,206 +7,203 @@ const SetPassword = () => {
     const navigate = useNavigate();
     const location = useLocation();
 
-    // Email comes from VerifyEmail page
-    const email = location.state?.email || "";
+    // Get email from navigation state or localStorage
+    const email = (
+        location.state?.email ||
+        localStorage.getItem("verificationEmail") ||
+        ""
+    ).trim().toLowerCase();
 
     const [password, setPasswordValue] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
+
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
 
-    // ==========================================
-    // CHECK EMAIL
-    // ==========================================
-
+    // Redirect if email is missing
     useEffect(() => {
-        // If user directly opens Set Password page
-        // without verified email, send them to login.
         if (!email) {
-            navigate("/login", { replace: true });
+            navigate("/registration", { replace: true });
         }
     }, [email, navigate]);
 
-    // ==========================================
-    // PASSWORD CHANGE
-    // ==========================================
-
+    // Handle password changes
     const handlePasswordChange = (e) => {
         setPasswordValue(e.target.value);
         setError("");
         setSuccess("");
     };
 
-    // ==========================================
-    // CONFIRM PASSWORD CHANGE
-    // ==========================================
-
+    // Handle confirm password changes
     const handleConfirmPasswordChange = (e) => {
         setConfirmPassword(e.target.value);
         setError("");
         setSuccess("");
     };
 
-    // ==========================================
-    // SUBMIT
-    // ==========================================
+    // Validate password
+    const validatePassword = () => {
+        if (!email) {
+            return "Registration email is missing. Please register again.";
+        }
 
+        if (!password) {
+            return "Please enter a password.";
+        }
+
+        if (password.length < 8) {
+            return "Password must be at least 8 characters long.";
+        }
+
+        if (password.length > 128) {
+            return "Password cannot exceed 128 characters.";
+        }
+
+        if (!confirmPassword) {
+            return "Please confirm your password.";
+        }
+
+        if (password !== confirmPassword) {
+            return "Passwords do not match.";
+        }
+
+        return "";
+    };
+
+    // Submit password
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (isSubmitting) return;
 
         setError("");
         setSuccess("");
 
-        // ==========================================
-        // VALIDATE EMAIL
-        // ==========================================
+        const validationError = validatePassword();
 
-        if (!email) {
-            setError(
-                "Registration email is missing. Please register again."
-            );
+        if (validationError) {
+            setError(validationError);
             return;
         }
-
-        // ==========================================
-        // VALIDATE PASSWORD
-        // ==========================================
-
-        if (!password) {
-            setError("Please enter a password.");
-            return;
-        }
-
-        // ==========================================
-        // PASSWORD LENGTH
-        // ==========================================
-
-        if (password.length < 6) {
-            setError(
-                "Password must be at least 6 characters long."
-            );
-            return;
-        }
-
-        // ==========================================
-        // VALIDATE CONFIRM PASSWORD
-        // ==========================================
-
-        if (!confirmPassword) {
-            setError("Please confirm your password.");
-            return;
-        }
-
-        // ==========================================
-        // MATCH PASSWORDS
-        // ==========================================
-
-        if (password !== confirmPassword) {
-            setError("Passwords do not match.");
-            return;
-        }
-
-        // ==========================================
-        // SEND TO BACKEND
-        // ==========================================
 
         try {
             setIsSubmitting(true);
 
-            const response = await setPassword({
-                email: email,
-                password: password,
-                confirmPassword: confirmPassword
+            const data = await setPassword({
+                email,
+                password,
+                confirmPassword,
             });
 
-            console.log(
-                "Set Password Response:",
-                response.data
-            );
+            console.log("Set password response:", data);
 
-            // ==========================================
-            // SUCCESS
-            // ==========================================
-
-            if (response.data.success) {
+            if (data?.success === true) {
                 setSuccess(
+                    data.message ||
                     "Password created successfully!"
                 );
 
-                /*
-                 * IMPORTANT:
-                 *
-                 * replace: true removes the Set Password
-                 * page from browser history.
-                 *
-                 * So after successful password creation:
-                 *
-                 * Set Password
-                 *       ↓
-                 *     Login
-                 *
-                 * Pressing Back will NOT return to
-                 * the Set Password page.
-                 */
+                // Remove temporary email after account setup
+                localStorage.removeItem("verificationEmail");
 
-                setTimeout(() => {
-                    navigate("/login", {
-                        replace: true
-                    });
-                }, 1000);
+                // Clear password fields
+                setPasswordValue("");
+                setConfirmPassword("");
+
+                // Redirect to login
+                navigate("/login", {
+                    replace: true,
+                    state: {
+                        email,
+                        message: "Account created successfully. Please log in.",
+                    },
+                });
+
+                return;
             }
 
-        } catch (error) {
-            console.error(
-                "Set Password Error:",
-                error
-            );
-
-            console.error(
-                "Response:",
-                error.response?.data
-            );
-
             setError(
-                error.response?.data?.message ||
+                data?.message ||
+                data?.error ||
                 "Unable to create password. Please try again."
             );
+
+        } catch (err) {
+            console.error(
+                "Set password error:",
+                err.response?.data || err.message
+            );
+
+            const status = err.response?.status;
+
+            if (status === 400) {
+                setError(
+                    err.response?.data?.message ||
+                    "Invalid password details."
+                );
+            } else if (status === 404) {
+                setError(
+                    err.response?.data?.message ||
+                    "Account not found. Please register again."
+                );
+            } else if (status === 409) {
+                setError(
+                    err.response?.data?.message ||
+                    "Password has already been created."
+                );
+            } else if (
+                err.code === "ERR_NETWORK" ||
+                !err.response
+            ) {
+                setError(
+                    "Unable to connect to the server. Please check your backend connection."
+                );
+            } else {
+                setError(
+                    err.response?.data?.message ||
+                    err.response?.data?.error ||
+                    "Unable to create password. Please try again."
+                );
+            }
+
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    // ==========================================
-    // PAGE UI
-    // ==========================================
-
     return (
-        <div className="min-h-screen bg-linear-to-br from-slate-50 via-white to-blue-50 flex items-center justify-center px-4 py-8">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 flex items-center justify-center px-4 py-8">
 
             <div className="w-full max-w-5xl bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100">
 
                 <div className="grid md:grid-cols-2">
 
-                    {/* ========================================= */}
                     {/* LEFT SIDE */}
-                    {/* ========================================= */}
-
-                    <div className="hidden md:flex bg-linear-to-br from-blue-600 via-blue-700 to-indigo-900 text-white p-10 flex-col justify-between">
+                    <div className="hidden md:flex bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-900 text-white p-10 flex-col justify-between">
 
                         <div>
 
                             {/* Logo */}
-
                             <div className="flex items-center gap-3 mb-10">
 
-                                <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center text-2xl font-bold border border-white/10">
-                                    SM
+                                <div className="w-16 h-16 rounded-xl bg-white flex items-center justify-center overflow-hidden p-2">
+
+                                    <img
+                                        src="/pcs_logo.jpg"
+                                        alt="PCS Global"
+                                        className="w-full h-full object-contain"
+                                        onError={(e) => {
+                                            e.currentTarget.style.display = "none";
+                                        }}
+                                    />
+
                                 </div>
 
                                 <div>
-
                                     <h1 className="text-2xl font-bold">
                                         Skill Matrix
                                     </h1>
@@ -213,7 +211,6 @@ const SetPassword = () => {
                                     <p className="text-blue-100 text-sm">
                                         Employee Portal
                                     </p>
-
                                 </div>
 
                             </div>
@@ -231,52 +228,37 @@ const SetPassword = () => {
                         </div>
 
                         {/* Features */}
-
                         <div className="space-y-4 text-sm text-blue-100">
 
                             <div className="flex items-center gap-3">
-
                                 <span className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center">
                                     ✓
                                 </span>
-
                                 Email verified
-
                             </div>
 
                             <div className="flex items-center gap-3">
-
                                 <span className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center">
                                     ✓
                                 </span>
-
                                 Create a secure password
-
                             </div>
 
                             <div className="flex items-center gap-3">
-
                                 <span className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center">
                                     ✓
                                 </span>
-
                                 Complete your account
-
                             </div>
 
                         </div>
 
                     </div>
 
-
-                    {/* ========================================= */}
                     {/* RIGHT SIDE */}
-                    {/* ========================================= */}
-
                     <div className="p-6 sm:p-10">
 
                         {/* Mobile Logo */}
-
                         <div className="md:hidden text-center mb-7">
 
                             <div className="inline-flex w-12 h-12 rounded-xl bg-blue-600 text-white items-center justify-center font-bold text-xl mb-2">
@@ -293,14 +275,12 @@ const SetPassword = () => {
 
                         </div>
 
-
                         {/* Heading */}
-
                         <div className="mb-7">
 
                             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 text-blue-600 text-xs font-semibold mb-4">
 
-                                <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                                <span className="w-2 h-2 rounded-full bg-blue-500" />
 
                                 CREATE PASSWORD
 
@@ -311,14 +291,12 @@ const SetPassword = () => {
                             </h2>
 
                             <p className="text-slate-500 mt-2">
-                                Create a password to complete your account.
+                                Create a secure password to complete your account.
                             </p>
 
                         </div>
 
-
                         {/* Email */}
-
                         <div className="mb-6 p-4 rounded-xl bg-slate-50 border border-slate-200">
 
                             <p className="text-xs text-slate-500 mb-1">
@@ -331,86 +309,116 @@ const SetPassword = () => {
 
                         </div>
 
-
                         {/* Error */}
-
                         {error && (
-                            <div className="mb-5 p-3 rounded-xl bg-red-50 border border-red-200 text-red-600 text-sm">
+                            <div
+                                role="alert"
+                                className="mb-5 p-3 rounded-xl bg-red-50 border border-red-200 text-red-600 text-sm"
+                            >
                                 {error}
                             </div>
                         )}
 
-
                         {/* Success */}
-
                         {success && (
-                            <div className="mb-5 p-3 rounded-xl bg-green-50 border border-green-200 text-green-600 text-sm">
+                            <div
+                                role="status"
+                                className="mb-5 p-3 rounded-xl bg-green-50 border border-green-200 text-green-600 text-sm"
+                            >
                                 {success}
                             </div>
                         )}
 
-
-                        {/* ========================================= */}
                         {/* PASSWORD FORM */}
-                        {/* ========================================= */}
-
                         <form
                             onSubmit={handleSubmit}
                             className="space-y-5"
+                            noValidate
                         >
 
                             {/* Password */}
-
                             <div>
 
-                                <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                                <label
+                                    htmlFor="password"
+                                    className="block text-sm font-medium text-slate-700 mb-1.5"
+                                >
                                     New Password
                                 </label>
 
-                                <input
-                                    type="password"
-                                    value={password}
-                                    onChange={handlePasswordChange}
-                                    placeholder="Enter new password"
-                                    autoComplete="new-password"
-                                    disabled={isSubmitting}
-                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100 disabled:bg-slate-100 disabled:cursor-not-allowed"
-                                />
+                                <div className="relative">
+
+                                    <input
+                                        id="password"
+                                        type={showPassword ? "text" : "password"}
+                                        value={password}
+                                        onChange={handlePasswordChange}
+                                        placeholder="Enter new password"
+                                        autoComplete="new-password"
+                                        disabled={isSubmitting || !email}
+                                        required
+                                        maxLength={128}
+                                        className="w-full px-4 py-3 pr-16 rounded-xl border border-slate-200 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100 disabled:bg-slate-100 disabled:cursor-not-allowed"
+                                    />
+
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword((prev) => !prev)}
+                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-medium text-blue-600 hover:text-blue-700"
+                                    >
+                                        {showPassword ? "Hide" : "Show"}
+                                    </button>
+
+                                </div>
 
                                 <p className="text-xs text-slate-400 mt-1.5">
-                                    Password must be at least 6 characters.
+                                    Use at least 8 characters.
                                 </p>
 
                             </div>
 
-
                             {/* Confirm Password */}
-
                             <div>
 
-                                <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                                <label
+                                    htmlFor="confirmPassword"
+                                    className="block text-sm font-medium text-slate-700 mb-1.5"
+                                >
                                     Confirm Password
                                 </label>
 
-                                <input
-                                    type="password"
-                                    value={confirmPassword}
-                                    onChange={handleConfirmPasswordChange}
-                                    placeholder="Confirm your password"
-                                    autoComplete="new-password"
-                                    disabled={isSubmitting}
-                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100 disabled:bg-slate-100 disabled:cursor-not-allowed"
-                                />
+                                <div className="relative">
+
+                                    <input
+                                        id="confirmPassword"
+                                        type={showConfirmPassword ? "text" : "password"}
+                                        value={confirmPassword}
+                                        onChange={handleConfirmPasswordChange}
+                                        placeholder="Confirm your password"
+                                        autoComplete="new-password"
+                                        disabled={isSubmitting || !email}
+                                        required
+                                        maxLength={128}
+                                        className="w-full px-4 py-3 pr-16 rounded-xl border border-slate-200 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100 disabled:bg-slate-100 disabled:cursor-not-allowed"
+                                    />
+
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowConfirmPassword((prev) => !prev)}
+                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-medium text-blue-600 hover:text-blue-700"
+                                    >
+                                        {showConfirmPassword ? "Hide" : "Show"}
+                                    </button>
+
+                                </div>
 
                             </div>
 
-
                             {/* Submit */}
-
                             <button
                                 type="submit"
-                                disabled={isSubmitting}
-                                className="w-full py-3.5 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 disabled:bg-blue-300 active:scale-[0.99] transition shadow-lg shadow-blue-200"
+                                disabled={isSubmitting || !email}
+                                className="w-full py-3.5 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed active:scale-[0.99] transition shadow-lg shadow-blue-200"
                             >
                                 {isSubmitting
                                     ? "Creating Password..."
@@ -419,23 +427,18 @@ const SetPassword = () => {
 
                         </form>
 
-
                         {/* Login */}
-
                         <div className="text-center mt-7">
 
                             <p className="text-sm text-slate-500">
-
                                 Already have an account?{" "}
 
                                 <Link
                                     to="/login"
-                                    replace
                                     className="font-semibold text-blue-600 hover:text-blue-700"
                                 >
                                     Login
                                 </Link>
-
                             </p>
 
                         </div>
@@ -443,9 +446,7 @@ const SetPassword = () => {
                     </div>
 
                 </div>
-
             </div>
-
         </div>
     );
 };

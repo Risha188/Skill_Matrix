@@ -1,3 +1,4 @@
+
 import {
     createBrowserRouter,
     createRoutesFromElements,
@@ -5,29 +6,25 @@ import {
     Route,
 } from "react-router-dom";
 
-// =========================================================
+// ==========================================
 // AUTHENTICATION
-// =========================================================
+// ==========================================
 
 import Login from "../pages/auth/Login.jsx";
 import Registration from "../pages/auth/Registration.jsx";
-import ForgotPassword from "../pages/auth/ForgotPassword.jsx";
-import VerifyEmail from "../pages/auth/VerifyEmail.jsx";
-import SetPassword from "../pages/auth/SetPassword.jsx";
-import VerifyResetCode from "../pages/auth/VerifyResetCode.jsx";
+import ForgotPassword from "../pages/auth/forgotPassword.jsx";
+import VerifyEmail from "../pages/auth/verifyEmail.jsx";
+import SetPassword from "../pages/auth/setPassword.jsx";
+import VerifyResetCode from "../pages/auth/verifyResetCode.jsx";
 import ResetPassword from "../pages/auth/ResetPassword.jsx";
 
-// =========================================================
-// ADMIN LOGIN
-// =========================================================
+// ==========================================
+// ADMIN
+// ==========================================
 
 import AdminLogin from "../pages/admin/AdminLogin.jsx";
-
-// =========================================================
-// ADMIN PANEL
-// =========================================================
-
 import AdminLayout from "../layouts/AdminLayout.jsx";
+
 import AdminDashboard from "../pages/admin/AdminDashboard.jsx";
 import Employees from "../pages/admin/Employees.jsx";
 import EmployeeDetails from "../pages/admin/EmployeeDetails.jsx";
@@ -36,64 +33,37 @@ import AssignedProject from "../pages/admin/AssignedProject.jsx";
 import ReassignProject from "../pages/admin/ReassignProject.jsx";
 import ProjectDetails from "../pages/admin/ProjectDetails.jsx";
 
-// =========================================================
-// EMPLOYEE PROTECTED ROUTE
-// =========================================================
-
-import ProtectedRoute from "./protectedRoute.jsx";
-
-// =========================================================
-// EMPLOYEE LAYOUT
-// =========================================================
+// ==========================================
+// EMPLOYEE
+// ==========================================
 
 import EmployeeLayout from "../layouts/EmployeeLayout.jsx";
+import ProtectedRoute from "./protectedRoute.jsx";
 
-// =========================================================
-// EMPLOYEE PAGES
-// =========================================================
-
+import Dashboard from "../pages/employee/Dashboard.jsx";
 import PersonalInformation from "../pages/employee/PersonalInformation.jsx";
 import Education from "../pages/employee/Education.jsx";
 import Address from "../pages/employee/Address.jsx";
 import Skills from "../pages/employee/Skills.jsx";
 import WorkExperience from "../pages/employee/WorkExperience.jsx";
 import BDM from "../pages/employee/BDM.jsx";
-import Dashboard from "../pages/employee/Dashboard.jsx";
 
-// =========================================================
-// MAIN ROUTER
-// =========================================================
+// ==========================================
+// ROUTER
+// ==========================================
 
 const router = createBrowserRouter(
     createRoutesFromElements(
         <>
-            {/* =================================================
-                START PAGE
-            ================================================= */}
-
+            {/* ROOT */}
             <Route
                 path="/"
-                element={
-                    <Navigate
-                        to="/login"
-                        replace
-                    />
-                }
+                element={<Navigate to="/login" replace />}
             />
 
-            {/* =================================================
-                EMPLOYEE AUTHENTICATION
-            ================================================= */}
-
-            <Route
-                path="/registration"
-                element={<Registration />}
-            />
-
-            <Route
-                path="/login"
-                element={<Login />}
-            />
+            {/* AUTHENTICATION */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/registration" element={<Registration />} />
 
             <Route
                 path="/forgot-password"
@@ -120,183 +90,118 @@ const router = createBrowserRouter(
                 element={<SetPassword />}
             />
 
-            {/* =================================================
-                ADMIN AUTHENTICATION
-            ================================================= */}
-
-            {/* /admin redirects to Admin Login */}
-
+            {/* ADMIN LOGIN */}
             <Route
                 path="/admin"
-                element={
-                    <Navigate
-                        to="/admin/login"
-                        replace
-                    />
-                }
+                element={<Navigate to="/admin/login" replace />}
             />
-
-            {/* Admin Login */}
 
             <Route
                 path="/admin/login"
                 element={<AdminLogin />}
             />
 
-            {/* =================================================
-                ADMIN DASHBOARD
-            ================================================= */}
-
+            {/* ADMIN DASHBOARD */}
             <Route
                 path="/admin/dashboard"
                 element={<AdminLayout />}
             >
-                <Route
-                    index
-                    element={<AdminDashboard />}
-                />
+                <Route index element={<AdminDashboard />} />
             </Route>
 
-            {/* =================================================
-                ADMIN EMPLOYEES
-            ================================================= */}
-
+            {/* ADMIN EMPLOYEES */}
             <Route
                 path="/admin/employees"
                 element={<AdminLayout />}
             >
-                <Route
-                    index
-                    element={<Employees />}
-                />
+                <Route index element={<Employees />} />
             </Route>
 
-            {/* =================================================
-                ADMIN EMPLOYEE DETAILS
-            ================================================= */}
-
+            {/* ADMIN EMPLOYEE DETAILS */}
             <Route
                 path="/admin/employees/:employeeId"
                 element={<AdminLayout />}
             >
-                <Route
-                    index
-                    element={<EmployeeDetails />}
-                />
+                <Route index element={<EmployeeDetails />} />
             </Route>
 
-            {/* =================================================
-                ADMIN ALL PROJECTS
-            ================================================= */}
-
+            {/* ADMIN PROJECTS */}
             <Route
                 path="/admin/allprojects"
                 element={<AdminLayout />}
             >
-                <Route
-                    index
-                    element={<AllProjects />}
-                />
+                <Route index element={<AllProjects />} />
             </Route>
-
-            {/* =================================================
-                ADMIN ASSIGNED PROJECTS
-            ================================================= */}
 
             <Route
                 path="/admin/assignedproject"
                 element={<AdminLayout />}
             >
-                <Route
-                    index
-                    element={<AssignedProject />}
-                />
+                <Route index element={<AssignedProject />} />
             </Route>
-
-            {/* =================================================
-                ADMIN REASSIGN PROJECT
-            ================================================= */}
 
             <Route
                 path="/admin/reassign-project/:projectId"
                 element={<AdminLayout />}
             >
-                <Route
-                    index
-                    element={<ReassignProject />}
-                />
+                <Route index element={<ReassignProject />} />
             </Route>
-
-            {/* =================================================
-                ADMIN PROJECT DETAILS
-            ================================================= */}
 
             <Route
                 path="/admin/projectdetails/:id"
                 element={<AdminLayout />}
             >
-                <Route
-                    index
-                    element={<ProjectDetails />}
-                />
+                <Route index element={<ProjectDetails />} />
             </Route>
 
-            {/* =================================================
+            {/* ======================================
                 PROTECTED EMPLOYEE ROUTES
-            ================================================= */}
+            ====================================== */}
 
-            <Route
-                element={<ProtectedRoute />}
-            >
+            <Route element={<ProtectedRoute />}>
                 <Route
                     path="/employee"
                     element={<EmployeeLayout />}
                 >
-                    {/* Employee Dashboard */}
+                    <Route
+                        index
+                        element={
+                            <Navigate
+                                to="/employee/dashboard"
+                                replace
+                            />
+                        }
+                    />
 
                     <Route
                         path="dashboard"
                         element={<Dashboard />}
                     />
 
-                    {/* Personal Information */}
-
                     <Route
                         path="personal"
-                        element={
-                            <PersonalInformation />
-                        }
+                        element={<PersonalInformation />}
                     />
-
-                    {/* Education */}
 
                     <Route
                         path="education"
                         element={<Education />}
                     />
 
-                    {/* Address */}
-
                     <Route
                         path="address"
                         element={<Address />}
                     />
-
-                    {/* Skills */}
 
                     <Route
                         path="skills"
                         element={<Skills />}
                     />
 
-                    {/* Work Experience */}
-
                     <Route
                         path="experience"
                         element={<WorkExperience />}
                     />
-
-                    {/* BDM */}
 
                     <Route
                         path="bdm"
@@ -305,18 +210,10 @@ const router = createBrowserRouter(
                 </Route>
             </Route>
 
-            {/* =================================================
-                UNKNOWN URL
-            ================================================= */}
-
+            {/* UNKNOWN ROUTES */}
             <Route
                 path="*"
-                element={
-                    <Navigate
-                        to="/login"
-                        replace
-                    />
-                }
+                element={<Navigate to="/login" replace />}
             />
         </>
     )

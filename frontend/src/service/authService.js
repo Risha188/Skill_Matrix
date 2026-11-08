@@ -1,228 +1,110 @@
 
 import axios from "axios";
 
-// =====================================================
-// API BASE URL
-// =====================================================
+// Backend API URL
+const API_URL = (
+    import.meta.env.VITE_API_URL || "http://localhost:5000/api"
+).replace(/\/+$/, "");
 
-// Vercel / local .env should contain:
-// VITE_API_URL=https://skillmatrix-backend-omega.vercel.app
-
-const API_URL = import.meta.env.VITE_API_URL;
-
-if (!API_URL) {
-    console.error(
-        "❌ VITE_API_URL is not defined. Check your .env file."
-    );
-}
-
-// =====================================================
-// AXIOS INSTANCE
-// =====================================================
-
+// Axios instance
 const api = axios.create({
-    baseURL: `${API_URL}/api/auth`,
-
+    baseURL: API_URL,
     headers: {
         "Content-Type": "application/json",
     },
-
-    // Keep this true if your backend uses cookies
-    // for refresh tokens or authentication.
-    withCredentials: true,
+    timeout: 15000,
 });
 
-// =====================================================
-// REGISTER
-// =====================================================
-
-export const registerUser = async (userData) => {
+// Common API handler
+const handleRequest = async (request) => {
     try {
-        const response = await api.post(
-            "/register",
-            userData
-        );
-
-        console.log(
-            "✅ Register Response:",
-            response.data
-        );
-
-        return response;
+        const response = await request;
+        return response.data;
     } catch (error) {
-        console.error(
-            "❌ Register Error:",
-            error.response?.data || error.message
-        );
+        const message =
+            error.response?.data?.message ||
+            error.response?.data?.error ||
+            (error.code === "ERR_NETWORK"
+                ? "Cannot connect to the backend. Check that your server is running."
+                : error.message) ||
+            "Something went wrong.";
 
-        throw error;
+        console.error("API request failed:", {
+            status: error.response?.status,
+            message,
+            code: error.code,
+        });
+
+        throw new Error(message);
     }
 };
 
-// =====================================================
-// VERIFY EMAIL
-// =====================================================
+// ======================================
+// EMPLOYEE AUTHENTICATION
+// ======================================
 
-export const verifyEmail = async (verificationData) => {
-    try {
-        const response = await api.post(
-            "/verify-email",
-            verificationData
-        );
+// Employee registration
+export const registerUser = (data) =>
+    handleRequest(api.post("/auth/register", data));
 
-        console.log(
-            "✅ Verify Email Response:",
-            response.data
-        );
+// Employee email verification
+export const verifyEmail = (data) =>
+    handleRequest(api.post("/auth/verify", data));
 
-        return response;
-    } catch (error) {
-        console.error(
-            "❌ Verify Email Error:",
-            error.response?.data || error.message
-        );
+// Employee password setup
+export const setPassword = (data) =>
+    handleRequest(api.post("/auth/set-password", data));
 
-        throw error;
-    }
-};
+// ======================================
+// EMPLOYEE + ADMIN LOGIN
+// ======================================
 
-// =====================================================
-// SET PASSWORD
-// =====================================================
+export const loginUser = (credentials) =>
+    handleRequest(
+        api.post("/auth/login", {
+            email: String(credentials.email || "")
+                .trim()
+                .toLowerCase(),
+            password: credentials.password,
+        })
+    );
 
-export const setPassword = async (passwordData) => {
-    try {
-        const response = await api.post(
-            "/set-password",
-            passwordData
-        );
+// ======================================
+// ADMIN AUTHENTICATION
+// ======================================
 
-        console.log(
-            "✅ Set Password Response:",
-            response.data
-        );
+// Admin registration
+export const registerAdmin = (data) =>
+    handleRequest(
+        api.post("/admin/register", {
+            fullName: String(data.fullName || "").trim(),
+            email: String(data.email || "").trim().toLowerCase(),
+        })
+    );
 
-        return response;
-    } catch (error) {
-        console.error(
-            "❌ Set Password Error:",
-            error.response?.data || error.message
-        );
+// Admin email verification
+export const verifyAdminEmail = (data) =>
+    handleRequest(api.post("/admin/verify", data));
 
-        throw error;
-    }
-};
+// Admin password setup
+export const setAdminPassword = (data) =>
+    handleRequest(api.post("/admin/set-password", data));
 
-// =====================================================
-// LOGIN
-// =====================================================
-
-export const loginUser = async (loginData) => {
-    try {
-        const response = await api.post(
-            "/login",
-            loginData
-        );
-
-        console.log(
-            "✅ Login Response:",
-            response.data
-        );
-
-        return response;
-    } catch (error) {
-        console.error(
-            "❌ Login Error:",
-            error.response?.data || error.message
-        );
-
-        throw error;
-    }
-};
-
-// =====================================================
+// ======================================
 // FORGOT PASSWORD
-// =====================================================
+// ======================================
 
-export const forgotPassword = async (emailData) => {
-    try {
-        const response = await api.post(
-            "/forgot-password",
-            emailData
-        );
+// Send password reset OTP
+export const forgotPassword = (data) =>
+    handleRequest(api.post("/auth/forgot-password", data));
 
-        console.log(
-            "✅ Forgot Password Response:",
-            response.data
-        );
+// Verify reset OTP
+export const verifyResetOTP = (data) =>
+    handleRequest(api.post("/auth/verify-reset-otp", data));
 
-        return response;
-    } catch (error) {
-        console.error(
-            "❌ Forgot Password Error:",
-            error.response?.data || error.message
-        );
+// Reset password
+export const resetPassword = (data) =>
+    handleRequest(api.post("/auth/reset-password", data));
 
-        throw error;
-    }
-};
-
-// =====================================================
-// VERIFY RESET CODE
-// =====================================================
-
-export const verifyResetCode = async (resetCodeData) => {
-    try {
-        const response = await api.post(
-            "/verify-reset-code",
-            resetCodeData
-        );
-
-        console.log(
-            "✅ Verify Reset Code Response:",
-            response.data
-        );
-
-        return response;
-    } catch (error) {
-        console.error(
-            "❌ Verify Reset Code Error:",
-            error.response?.data || error.message
-        );
-
-        throw error;
-    }
-};
-
-// =====================================================
-// RESET PASSWORD
-// =====================================================
-
-export const resetPassword = async (passwordData) => {
-    try {
-        const response = await api.post(
-            "/reset-password",
-            passwordData
-        );
-
-        console.log(
-            "✅ Reset Password Response:",
-            response.data
-        );
-
-        return response;
-    } catch (error) {
-        console.error(
-            "❌ Reset Password Error:",
-            error.response?.data || error.message
-        );
-
-        throw error;
-    }
-};
-
-// =====================================================
-// DEFAULT EXPORT
-// =====================================================
-
+// Export Axios instance
 export default api;

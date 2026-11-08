@@ -1,46 +1,32 @@
+
 import { useState } from "react";
 import {
     Link,
     useLocation,
     useNavigate,
 } from "react-router-dom";
-import { verifyResetCode } from "../../service/authService";
+import { verifyResetOTP } from "../../service/authService";
 
 const VerifyResetCode = () => {
-
     const navigate = useNavigate();
     const location = useLocation();
 
-    // =========================================================
-    // GET EMAIL
-    // =========================================================
-
-    const email =
+    // Get email from navigation state or localStorage
+    const email = (
         location.state?.email ||
         localStorage.getItem("resetPasswordEmail") ||
-        "";
+        ""
+    ).trim().toLowerCase();
 
-    // =========================================================
-    // STATES
-    // =========================================================
-
+    // States
     const [resetCode, setResetCode] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
-    // =========================================================
-    // VERIFY RESET CODE
-    // =========================================================
-
+    // Verify reset code
     const handleSubmit = async (e) => {
-
         e.preventDefault();
-
         setError("");
-
-        // -----------------------------------------------------
-        // CHECK EMAIL
-        // -----------------------------------------------------
 
         if (!email) {
             setError(
@@ -49,51 +35,25 @@ const VerifyResetCode = () => {
             return;
         }
 
-        // -----------------------------------------------------
-        // CHECK CODE
-        // -----------------------------------------------------
-
-        if (resetCode.length !== 6) {
-            setError(
-                "Please enter the 6-digit verification code."
-            );
+        if (!/^\d{6}$/.test(resetCode)) {
+            setError("Please enter a valid 6-digit verification code.");
             return;
         }
 
         try {
-
             setLoading(true);
 
-            // -------------------------------------------------
-            // VERIFY CODE
-            // -------------------------------------------------
-
-            const response = await verifyResetCode({
-                email: email.trim(),
+            const data = await verifyResetCode({
+                email,
                 resetCode: resetCode.trim(),
             });
 
-            console.log(
-                "Verify Reset Code Response:",
-                response.data
-            );
+            if (data?.success === true) {
 
-            // -------------------------------------------------
-            // SUCCESS
-            // -------------------------------------------------
-
-            if (response?.data?.success) {
-
-                /*
-                 * IMPORTANT:
-                 *
-                 * ResetPassword.jsx expects resetCode.
-                 * Therefore we save the verified code here.
-                 */
-
+                // Save details temporarily for ResetPassword.jsx
                 localStorage.setItem(
                     "resetPasswordEmail",
-                    email.trim()
+                    email
                 );
 
                 localStorage.setItem(
@@ -101,70 +61,58 @@ const VerifyResetCode = () => {
                     resetCode.trim()
                 );
 
-                // -------------------------------------------------
-                // GO TO RESET PASSWORD
-                // -------------------------------------------------
-
+                // Navigate to reset password page
                 navigate("/reset-password", {
+                    replace: true,
                     state: {
-                        email: email.trim(),
+                        email,
                         resetCode: resetCode.trim(),
                     },
                 });
 
-            } else {
-
-                setError(
-                    response?.data?.message ||
-                    "Invalid verification code."
-                );
+                return;
             }
 
-        } catch (error) {
+            setError(
+                data?.message || "Invalid verification code."
+            );
 
+        } catch (err) {
             console.error(
                 "Verify Reset Code Error:",
-                error
+                err?.response?.data || err.message
             );
 
             setError(
-                error?.response?.data?.message ||
+                err?.response?.data?.message ||
+                err.message ||
                 "Unable to verify the code. Please try again."
             );
 
         } finally {
-
             setLoading(false);
         }
     };
 
-    // =========================================================
-    // UI
-    // =========================================================
-
     return (
-        <div className="min-h-screen bg-linear-to-br from-slate-50 via-white to-blue-50 flex items-center justify-center px-4 py-8">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 flex items-center justify-center px-4 py-8">
 
             <div className="w-full max-w-5xl bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100">
 
                 <div className="grid md:grid-cols-2">
 
-                    {/* =================================================
-                        LEFT SIDE
-                    ================================================= */}
-
-                    <div className="hidden md:flex bg-linear-to-br from-blue-700 via-blue-600 to-indigo-700 text-white p-10 flex-col justify-between">
+                    {/* LEFT SIDE */}
+                    <div className="hidden md:flex bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-700 text-white p-10 flex-col justify-between">
 
                         <div>
 
-                            {/* Logo */}
-
+                            {/* LOGO */}
                             <div className="flex items-center gap-3 mb-10">
 
                                 <div className="w-20 h-20 rounded-full bg-white flex items-center justify-center overflow-hidden">
 
                                     <img
-                                        src="../../../public/pcs_logo.jpg"
+                                        src="/pcs_logo.jpg"
                                         alt="PCS Global"
                                         className="w-full h-full rounded-full object-contain p-2"
                                     />
@@ -172,7 +120,6 @@ const VerifyResetCode = () => {
                                 </div>
 
                                 <div>
-
                                     <h1 className="text-2xl font-bold">
                                         Skill Matrix
                                     </h1>
@@ -180,13 +127,11 @@ const VerifyResetCode = () => {
                                     <p className="text-blue-100 text-sm">
                                         Employee Management System
                                     </p>
-
                                 </div>
 
                             </div>
 
-                            {/* Heading */}
-
+                            {/* HEADING */}
                             <h2 className="text-4xl font-bold leading-tight">
                                 Verify your account.
                             </h2>
@@ -198,53 +143,38 @@ const VerifyResetCode = () => {
 
                         </div>
 
-                        {/* Features */}
-
+                        {/* FEATURES */}
                         <div className="space-y-4 text-sm text-blue-100">
 
                             <div className="flex items-center gap-3">
-
                                 <span className="w-7 h-7 rounded-full bg-white/15 flex items-center justify-center">
                                     ✓
                                 </span>
-
                                 Secure verification
-
                             </div>
 
                             <div className="flex items-center gap-3">
-
                                 <span className="w-7 h-7 rounded-full bg-white/15 flex items-center justify-center">
                                     ✓
                                 </span>
-
                                 One-time verification code
-
                             </div>
 
                             <div className="flex items-center gap-3">
-
                                 <span className="w-7 h-7 rounded-full bg-white/15 flex items-center justify-center">
                                     ✓
                                 </span>
-
                                 Protected password recovery
-
                             </div>
 
                         </div>
 
                     </div>
 
-
-                    {/* =================================================
-                        RIGHT SIDE
-                    ================================================= */}
-
+                    {/* RIGHT SIDE */}
                     <div className="p-6 sm:p-10">
 
-                        {/* Mobile Logo */}
-
+                        {/* MOBILE LOGO */}
                         <div className="md:hidden text-center mb-7">
 
                             <div className="inline-flex w-20 h-20 rounded-full bg-white border border-slate-200 items-center justify-center mb-2 overflow-hidden">
@@ -261,18 +191,18 @@ const VerifyResetCode = () => {
                                 Skill Matrix
                             </h1>
 
+                            <p className="text-sm text-slate-500">
+                                Employee Management System
+                            </p>
+
                         </div>
 
-
-                        {/* Icon */}
-
+                        {/* ICON */}
                         <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-2xl mb-6">
                             🔐
                         </div>
 
-
-                        {/* Heading */}
-
+                        {/* HEADING */}
                         <div className="mb-7">
 
                             <h2 className="text-3xl font-bold text-slate-800">
@@ -289,24 +219,19 @@ const VerifyResetCode = () => {
 
                         </div>
 
-
-                        {/* Error */}
-
+                        {/* ERROR MESSAGE */}
                         {error && (
-
-                            <div className="mb-5 rounded-xl bg-red-50 border border-red-200 p-4">
-
+                            <div
+                                role="alert"
+                                className="mb-5 rounded-xl bg-red-50 border border-red-200 p-4"
+                            >
                                 <p className="text-sm text-red-700">
                                     {error}
                                 </p>
-
                             </div>
-
                         )}
 
-
-                        {/* Form */}
-
+                        {/* FORM */}
                         <form
                             onSubmit={handleSubmit}
                             className="space-y-5"
@@ -330,18 +255,12 @@ const VerifyResetCode = () => {
                                     maxLength={6}
                                     value={resetCode}
                                     onChange={(e) => {
-
-                                        const value =
-                                            e.target.value
-                                                .replace(/\D/g, "")
-                                                .slice(0, 6);
+                                        const value = e.target.value
+                                            .replace(/\D/g, "")
+                                            .slice(0, 6);
 
                                         setResetCode(value);
-
-                                        if (error) {
-                                            setError("");
-                                        }
-
+                                        setError("");
                                     }}
                                     placeholder="Enter 6-digit code"
                                     required
@@ -351,9 +270,7 @@ const VerifyResetCode = () => {
 
                             </div>
 
-
-                            {/* Button */}
-
+                            {/* VERIFY BUTTON */}
                             <button
                                 type="submit"
                                 disabled={
@@ -363,19 +280,15 @@ const VerifyResetCode = () => {
                                 }
                                 className="w-full py-3.5 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition shadow-lg shadow-blue-200 disabled:bg-blue-400 disabled:cursor-not-allowed"
                             >
-
                                 {loading
                                     ? "Verifying..."
                                     : "Verify Code"
                                 }
-
                             </button>
 
                         </form>
 
-
-                        {/* Back */}
-
+                        {/* BACK TO FORGOT PASSWORD */}
                         <div className="text-center mt-7">
 
                             <Link
@@ -387,7 +300,7 @@ const VerifyResetCode = () => {
 
                         </div>
 
-
+                        {/* BACK TO LOGIN */}
                         <div className="text-center mt-4">
 
                             <Link

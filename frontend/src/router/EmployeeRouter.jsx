@@ -11,10 +11,10 @@ import {
 
 import Login from "../pages/auth/Login.jsx";
 import Registration from "../pages/auth/Registration.jsx";
-import ForgotPassword from "../pages/auth/ForgotPassword.jsx";
-import VerifyEmail from "../pages/auth/VerifyEmail.jsx";
-import SetPassword from "../pages/auth/SetPassword.jsx";
-import VerifyResetCode from "../pages/auth/VerifyResetCode.jsx";
+import ForgotPassword from "../pages/auth/forgotPassword.jsx";
+import VerifyEmail from "../pages/auth/verifyEmail.jsx";
+import SetPassword from "../pages/auth/setPassword.jsx";
+import VerifyResetCode from "../pages/auth/verifyResetCode.jsx";
 import ResetPassword from "../pages/auth/ResetPassword.jsx";
 
 // ========================================

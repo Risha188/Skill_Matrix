@@ -23,7 +23,7 @@ const AdminContext = createContext(null);
 export const AdminProvider = ({
     children,
 }) => {
-    const [admins, setAdmins] = useState([]);
+    const [admins, setAdmins] = useState(() => initializeAdmins());
 
     const [currentAdmin, setCurrentAdmin] =
         useState(null);
@@ -36,62 +36,37 @@ export const AdminProvider = ({
     // =====================================================
 
     useEffect(() => {
-        const initializedAdmins =
-            initializeAdmins();
+    const storedCurrentAdmin = localStorage.getItem(
+        CURRENT_ADMIN_STORAGE_KEY
+    );
 
-        setAdmins(initializedAdmins);
+    if (storedCurrentAdmin) {
+        try {
+            const parsedAdmin = JSON.parse(storedCurrentAdmin);
 
-        const storedCurrentAdmin =
-            localStorage.getItem(
-                CURRENT_ADMIN_STORAGE_KEY
+            const latestAdmin = admins.find(
+                (admin) => admin.id === parsedAdmin.id
             );
 
-        if (storedCurrentAdmin) {
-            try {
-                const parsedAdmin =
-                    JSON.parse(
-                        storedCurrentAdmin
-                    );
-
-                const latestAdmin =
-                    initializedAdmins.find(
-                        (admin) =>
-                            admin.id ===
-                            parsedAdmin.id
-                    );
-
-                if (
-                    latestAdmin &&
-                    (
-                        latestAdmin.isDefault ||
-                        (
-                            latestAdmin.isApproved &&
-                            latestAdmin.isActive
-                        )
-                    )
-                ) {
-                    setCurrentAdmin(
-                        latestAdmin
-                    );
-                } else {
-                    localStorage.removeItem(
-                        CURRENT_ADMIN_STORAGE_KEY
-                    );
-                }
-            } catch (error) {
-                console.error(
-                    "Failed to restore admin session:",
-                    error
-                );
-
-                localStorage.removeItem(
-                    CURRENT_ADMIN_STORAGE_KEY
-                );
+            if (
+                latestAdmin &&
+                (
+                    latestAdmin.isDefault ||
+                    (latestAdmin.isApproved && latestAdmin.isActive)
+                )
+            ) {
+                setCurrentAdmin(latestAdmin);
+            } else {
+                localStorage.removeItem(CURRENT_ADMIN_STORAGE_KEY);
             }
+        } catch (error) {
+            console.error("Failed to restore admin session:", error);
+            localStorage.removeItem(CURRENT_ADMIN_STORAGE_KEY);
         }
+    }
 
-        setLoading(false);
-    }, []);
+    setLoading(false);
+}, []);
 
     // =====================================================
     // SAVE ADMINS
