@@ -1,20 +1,30 @@
+# ==========================================
 # Dependencies
+# ==========================================
 node_modules/
 **/node_modules/
 
-# Build output
-dist/
-dist-ssr/
-build/
-coverage/
-
+# ==========================================
 # Environment variables and secrets
+# ==========================================
 .env
 .env.*
+**/.env
+**/.env.*
 !.env.example
-!.env.sample
+!**/.env.example
 
+# ==========================================
+# Build output
+# ==========================================
+dist/
+build/
+**/dist/
+**/build/
+
+# ==========================================
 # Logs
+# ==========================================
 logs/
 *.log
 npm-debug.log*
@@ -23,31 +33,42 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# Local files
-*.local
+# ==========================================
+# Vite and framework caches
+# ==========================================
+.vite/
+**/.vite/
+.next/
+.nuxt/
+.output/
+.vercel/
+.turbo/
+
+# ==========================================
+# Testing and coverage
+# ==========================================
+coverage/
+.nyc_output/
+
+# ==========================================
+# System files
+# ==========================================
 .DS_Store
 Thumbs.db
+desktop.ini
 
-# Editor directories
+# ==========================================
+# IDE and editor files
+# ==========================================
 .vscode/*
 !.vscode/extensions.json
 .idea/
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+*.swp
+*.swo
 
+# ==========================================
 # Temporary files
+# ==========================================
 *.tmp
 *.temp
-
-# Vercel
-.vercel/
-
-# Testing
-.nyc_output/
-node_modules/
-.env
-.env.*
-!.env.example
+*.bak
