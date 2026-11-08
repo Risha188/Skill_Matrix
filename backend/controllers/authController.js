@@ -1,8 +1,8 @@
-const User = require("../model/User");
-const Employee = require("../model/Employee");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const nodemailer = require("nodemailer");
+import User from "../model/User.js";
+import Employee from "../model/Employee.js";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import nodemailer from "nodemailer";
 // ======================================================
 // EMAIL TRANSPORTER
 // ======================================================
@@ -428,153 +428,121 @@ const registerUser = async (req, res) => {
 // POST /api/auth/verify
 // ======================================================
 
+
 const verifyEmail = async (req, res) => {
     try {
+        const { email, verificationCode } = req.body;
 
-        console.log(
-            "===== VERIFY EMAIL ====="
-        );
-
-        console.log(
-            "BODY:",
-            req.body
-        );
-
-        const {
-            email,
-            verificationCode
-        } = req.body;
-
-        if (
-            !email ||
-            !verificationCode
-        ) {
+        // Validate required fields
+        if (!email || !verificationCode) {
             return res.status(400).json({
                 success: false,
-                message:
-                    "Email and verification code are required"
+                message: "Email and verification code are required."
             });
         }
 
-        const normalizedEmail =
-            email.toLowerCase().trim();
+        const normalizedEmail = String(email).trim().toLowerCase();
+        const cleanCode = String(verificationCode).trim();
 
-        const cleanCode =
-            verificationCode
-                .toString()
-                .trim();
-
-        // ==================================================
-        // FIND USER
-        // ==================================================
-
-        const user =
-            await User.findOne({
-                email:
-                    normalizedEmail
+        // Validate email and OTP format
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+            return res.status(400).json({
+                success: false,
+                message: "Please enter a valid email address."
             });
+        }
+
+        if (!/^\d{6}$/.test(cleanCode)) {
+            return res.status(400).json({
+                success: false,
+                message: "Verification code must contain exactly 6 digits."
+            });
+        }
+
+        // Find user
+        const user = await User.findOne({
+            email: normalizedEmail
+        });
 
         if (!user) {
             return res.status(404).json({
                 success: false,
-                message:
-                    "User not found"
+                message: "User not found. Please register again."
             });
         }
 
-        // ==================================================
-        // ALREADY VERIFIED
-        // ==================================================
+        // Check account status
+        if (!user.isActive) {
+            return res.status(403).json({
+                success: false,
+                message: "Your account is inactive. Please contact the administrator."
+            });
+        }
 
+        // Check whether already verified
         if (user.isEmailVerified) {
-            return res.status(400).json({
-                success: false,
-                message:
-                    "Email is already verified"
+            return res.status(200).json({
+                success: true,
+                message: "Your email is already verified."
             });
         }
 
-        // ==================================================
-        // CODE CHECK
-        // ==================================================
-
-        if (
-            user.verificationCode !==
-            cleanCode
-        ) {
+        // Check whether a verification code exists
+        if (!user.verificationCode || !user.verificationCodeExpires) {
             return res.status(400).json({
                 success: false,
-                message:
-                    "Invalid verification code"
+                message: "No active verification code found. Please register again or request a new code."
             });
         }
 
-        // ==================================================
-        // EXPIRATION
-        // ==================================================
+        // Check expiration
+        const expiryTime = new Date(user.verificationCodeExpires).getTime();
 
-        if (
-            !user.verificationCodeExpires ||
-            user.verificationCodeExpires <
-                new Date()
-        ) {
+        if (!Number.isFinite(expiryTime) || expiryTime <= Date.now()) {
             return res.status(400).json({
                 success: false,
-                message:
-                    "Verification code has expired"
+                message: "Verification code has expired. Please request a new code."
             });
         }
 
-        // ==================================================
-        // VERIFY
-        // ==================================================
+        // Compare verification codes
+        const storedCode = String(user.verificationCode).trim();
 
-        user.isEmailVerified =
-            true;
+        if (storedCode !== cleanCode) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid verification code. Please enter the latest code sent to your email."
+            });
+        }
 
-        user.verificationCode =
-            null;
-
-        user.verificationCodeExpires =
-            null;
+        // Mark email as verified
+        user.isEmailVerified = true;
+        user.verificationCode = null;
+        user.verificationCodeExpires = null;
 
         await user.save();
 
         return res.status(200).json({
             success: true,
-
-            message:
-                "Email verified successfully",
-
+            message: "Email verified successfully.",
             user: {
-                id:
-                    user._id,
-
-                fullName:
-                    user.fullName,
-
-                email:
-                    user.email,
-
-                role:
-                    user.role
+                id: user._id,
+                fullName: user.fullName,
+                email: user.email,
+                role: user.role
             }
         });
 
     } catch (error) {
-
-        console.error(
-            "❌ Verify Email Error:",
-            error
-        );
+        console.error("Verify Email Error:", error.message);
 
         return res.status(500).json({
             success: false,
-            message:
-                "Server error while verifying email"
+            message: "Server error while verifying your email."
         });
     }
 };
+
 
 // ======================================================
 // SET PASSWORD
@@ -1164,35 +1132,13 @@ const loginUser = async (req, res) => {
 
 
     } catch (error) {
+    console.error("LOGIN SERVER ERROR:", error.message);
 
-        console.error(
-            "================================="
-        );
-
-        console.error(
-            "❌ LOGIN SERVER ERROR"
-        );
-
-        console.error(
-            error
-        );
-
-        console.error(
-            "================================="
-        );
-
-
-        return res.status(500).json({
-
-            success: false,
-
-            message:
-                "Server error during login.",
-
-            error:
-                error.message
-        });
-    }
+    return res.status(500).json({
+        success: false,
+        message: "Server error during login."
+    });
+}
 };
 
 const forgotPassword = async (
@@ -1391,7 +1337,7 @@ const forgotPassword = async (
 // POST /api/auth/verify-reset-code
 // ======================================================
 
-const verifyResetCode = async (
+const verifyResetOTP = async (
     req,
     res
 ) => {
@@ -1508,12 +1454,9 @@ const verifyResetCode = async (
 // POST /api/auth/reset-password
 // ======================================================
 
-const resetPassword = async (
-    req,
-    res
-) => {
-    try {
 
+const resetPassword = async (req, res) => {
+    try {
         const {
             email,
             resetCode,
@@ -1521,151 +1464,112 @@ const resetPassword = async (
             confirmPassword
         } = req.body;
 
+        // 1. Validate required fields
         if (
             !email ||
+            !resetCode ||
             !newPassword ||
             !confirmPassword
         ) {
             return res.status(400).json({
                 success: false,
-                message:
-                    "Email, new password and confirm password are required"
+                message: "All fields are required."
             });
         }
 
-        if (
-            newPassword !==
-            confirmPassword
-        ) {
+        // 2. Normalize email
+        const cleanEmail = String(email).trim().toLowerCase();
+        const cleanResetCode = String(resetCode).trim();
+
+        // 3. Validate password
+        if (newPassword !== confirmPassword) {
             return res.status(400).json({
                 success: false,
-                message:
-                    "Passwords do not match"
+                message: "Passwords do not match."
             });
         }
 
-        if (
-            newPassword.length < 8
-        ) {
+        if (newPassword.length < 8) {
             return res.status(400).json({
                 success: false,
-                message:
-                    "Password must be at least 8 characters"
+                message: "Password must be at least 8 characters."
             });
         }
 
-        const cleanEmail =
-            email.toLowerCase().trim();
-
-        const user =
-            await User.findOne({
-                email:
-                    cleanEmail,
-
-                role:
-                    "employee"
-            });
+        // 4. Find employee account
+        const user = await User.findOne({
+            email: cleanEmail,
+            role: "employee"
+        });
 
         if (!user) {
             return res.status(404).json({
                 success: false,
-                message:
-                    "Employee account not found"
+                message: "Employee account not found."
             });
         }
 
-        // ==================================================
-        // VERIFY RESET CODE AGAIN
-        // ==================================================
-
+        // 5. Verify reset code
         if (
-            !resetCode ||
-            user.resetCode !==
-                resetCode
-                    .toString()
-                    .trim()
+            !user.resetCode ||
+            user.resetCode !== cleanResetCode
         ) {
             return res.status(403).json({
                 success: false,
-                message:
-                    "Please verify the reset code first"
+                message: "Invalid reset code. Please verify again."
             });
         }
 
+        // 6. Check expiration
         if (
             !user.resetCodeExpires ||
-            user.resetCodeExpires <
-                new Date()
+            new Date(user.resetCodeExpires).getTime() <= Date.now()
         ) {
             return res.status(400).json({
                 success: false,
-                message:
-                    "Password reset session has expired"
+                message: "Password reset code has expired. Request a new code."
             });
         }
 
-        // ==================================================
-        // HASH PASSWORD
-        // ==================================================
+        // 7. Hash new password
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-        const hashedPassword =
-            await bcrypt.hash(
-                newPassword,
-                10
-            );
+        user.password = hashedPassword;
 
-        user.password =
-            hashedPassword;
-
-        // ==================================================
-        // CLEAR RESET DATA
-        // ==================================================
-
-        user.resetCode =
-            null;
-
-        user.resetCodeExpires =
-            null;
+        // 8. Clear reset code
+        user.resetCode = null;
+        user.resetCodeExpires = null;
 
         await user.save();
 
-        console.log(
-            "✅ PASSWORD RESET SUCCESS:",
-            user.email
-        );
+        console.log("✅ Password reset completed.");
 
         return res.status(200).json({
             success: true,
-
-            message:
-                "Password reset successfully"
+            message: "Password reset successfully. Please log in."
         });
 
     } catch (error) {
-
-        console.error(
-            "❌ Reset Password Error:",
-            error
-        );
+        console.error("❌ Reset Password Error:", error.message);
 
         return res.status(500).json({
             success: false,
-            message:
-                error.message
+            message: "Unable to reset password. Please try again."
         });
     }
 };
+
 
 // ======================================================
 // EXPORTS
 // ======================================================
 
-module.exports = {
+export {
     registerUser,
     verifyEmail,
     setPassword,
     loginUser,
     forgotPassword,
-    verifyResetCode,
+    verifyResetOTP,
     resetPassword
 };
