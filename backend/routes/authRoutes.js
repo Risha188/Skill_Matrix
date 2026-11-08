@@ -1,96 +1,23 @@
-const express = require("express");
+import express from "express";
 
-const {
+import {
     registerUser,
     verifyEmail,
     setPassword,
     loginUser,
     forgotPassword,
-    verifyResetCode,
+    verifyResetOTP,
     resetPassword
-} = require("../controllers/authController");
+} from "../controllers/authController.js";
 
 const router = express.Router();
 
-console.log("===== AUTH ROUTES =====");
+router.post("/register", registerUser);
+router.post("/verify", verifyEmail);
+router.post("/set-password", setPassword);
+router.post("/login", loginUser);
+router.post("/forgot-password", forgotPassword);
+router.post("/verify-reset-code", verifyResetOTP);
+router.post("/reset-password", resetPassword);
 
-console.log("registerUser:", typeof registerUser);
-console.log("verifyEmail:", typeof verifyEmail);
-console.log("setPassword:", typeof setPassword);
-console.log("loginUser:", typeof loginUser);
-console.log("forgotPassword:", typeof forgotPassword);
-console.log("verifyResetCode:", typeof verifyResetCode);
-console.log("resetPassword:", typeof resetPassword);
-
-
-// ==========================================
-// REGISTER EMPLOYEE
-// ==========================================
-
-router.post(
-    "/register",
-    registerUser
-);
-
-
-// ==========================================
-// VERIFY EMPLOYEE EMAIL
-// ==========================================
-
-router.post(
-    "/verify-email",
-    verifyEmail
-);
-
-
-// ==========================================
-// SET PASSWORD AFTER REGISTRATION
-// ==========================================
-
-router.post(
-    "/set-password",
-    setPassword
-);
-
-
-// ==========================================
-// LOGIN
-// ==========================================
-
-router.post(
-    "/login",
-    loginUser
-);
-
-
-// ==========================================
-// FORGOT PASSWORD - SEND CODE
-// ==========================================
-
-router.post(
-    "/forgot-password",
-    forgotPassword
-);
-
-
-// ==========================================
-// VERIFY RESET CODE
-// ==========================================
-
-router.post(
-    "/verify-reset-code",
-    verifyResetCode
-);
-
-
-// ==========================================
-// RESET PASSWORD
-// ==========================================
-
-router.post(
-    "/reset-password",
-    resetPassword
-);
-
-
-module.exports = router;
+export default router;

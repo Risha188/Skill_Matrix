@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const pendingAdminSchema = new mongoose.Schema(
     {
@@ -33,7 +33,7 @@ const pendingAdminSchema = new mongoose.Schema(
     }
 );
 
-module.exports = mongoose.model(
+export default mongoose.model(
     "PendingAdmin",
     pendingAdminSchema
 );

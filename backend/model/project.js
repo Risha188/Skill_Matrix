@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose"
 
 const projectSchema = new mongoose.Schema(
     {
@@ -133,6 +133,6 @@ const projectSchema = new mongoose.Schema(
     }
 );
 
-module.exports =
+export default
     mongoose.models.Project ||
     mongoose.model("Project", projectSchema);
