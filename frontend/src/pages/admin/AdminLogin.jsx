@@ -1,52 +1,34 @@
+
 import { useState } from "react";
-import {
-    Link,
-    useNavigate,
-} from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
-import { loginUser } from "../../service/authService";
 import { useAdmin } from "../../context/AdminContext.jsx";
 
-
 const AdminLogin = () => {
-
     const navigate = useNavigate();
 
     const {
-        // We only need logout/login state from context.
-        // DO NOT use setCurrentAdmin here.
+        loginAdmin,
+        loading: adminLoading,
+        currentAdmin,
     } = useAdmin();
-
-
-    // =========================================================
-    // STATE
-    // =========================================================
 
     const [formData, setFormData] = useState({
         email: "",
         password: "",
     });
 
-    const [showPassword, setShowPassword] =
-        useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
+    const [error, setError] = useState("");
 
-    const [loading, setLoading] =
-        useState(false);
-
-    const [error, setError] =
-        useState("");
-
-
-    // =========================================================
-    // INPUT CHANGE
-    // =========================================================
+    // Redirect an already authenticated administrator.
+    if (currentAdmin && !adminLoading) {
+        navigate("/admin/dashboard", { replace: true });
+    }
 
     const handleChange = (e) => {
-
-        const {
-            name,
-            value,
-        } = e.target;
+        const { name, value } = e.target;
 
         setFormData((prev) => ({
             ...prev,
@@ -56,709 +38,135 @@ const AdminLogin = () => {
         setError("");
     };
 
-
-    // =========================================================
-    // ADMIN LOGIN
-    // =========================================================
-
-    const handleSubmit = async (e) => {
-
+    const handleSubmit = (e) => {
         e.preventDefault();
 
-        if (loading) {
+        if (submitting || adminLoading) return;
+
+        const email = formData.email.trim().toLowerCase();
+        const password = formData.password;
+
+        if (!email || !password) {
+            setError("Please enter your email and password.");
             return;
         }
 
+        setSubmitting(true);
         setError("");
 
-
-        // =====================================================
-        // GET LOGIN DATA
-        // =====================================================
-
-        const email =
-            formData.email
-                .trim()
-                .toLowerCase();
-
-        const password =
-            formData.password;
-
-
-        // =====================================================
-        // VALIDATION
-        // =====================================================
-
-        if (!email) {
-
-            setError(
-                "Please enter your admin email."
-            );
-
-            return;
-        }
-
-
-        if (!password) {
-
-            setError(
-                "Please enter your admin password."
-            );
-
-            return;
-        }
-
-
-        setLoading(true);
-
-
         try {
+            // Use AdminContext, NOT the employee login API.
+            const result = loginAdmin({
+                email,
+                password,
+            });
 
-            console.log(
-                "================================="
-            );
-
-            console.log(
-                "ADMIN LOGIN REQUEST"
-            );
-
-            console.log(
-                "Email:",
-                email
-            );
-
-            console.log(
-                "================================="
-            );
-
-
-            // =================================================
-            // BACKEND LOGIN
-            // =================================================
-
-            const response =
-                await loginUser({
-                    email,
-                    password,
-                });
-
-
-            console.log(
-                "Admin login response:",
-                response?.data
-            );
-
-
-            const data =
-                response?.data;
-
-
-            // =================================================
-            // RESPONSE CHECK
-            // =================================================
-
-            if (!data) {
-
+            if (!result?.success) {
                 setError(
-                    "No response was received from the server."
+                    result?.message ||
+                    "Invalid administrator email or password."
                 );
-
                 return;
             }
 
-
-            // =================================================
-            // LOGIN FAILED
-            // =================================================
-
-            if (!data.success) {
-
-                setError(
-                    data.message ||
-                    "Invalid admin email or password."
-                );
-
-                return;
-            }
-
-
-            // =================================================
-            // TOKEN CHECK
-            // =================================================
-
-            if (!data.token) {
-
-                console.error(
-                    "Admin login succeeded but token is missing."
-                );
-
-                setError(
-                    "Login failed because the server did not return an authentication token."
-                );
-
-                return;
-            }
-
-
-            // =================================================
-            // USER CHECK
-            // =================================================
-
-            if (!data.user) {
-
-                setError(
-                    "Login failed because administrator information was not returned."
-                );
-
-                return;
-            }
-
-
-            // =================================================
-            // ROLE CHECK
-            // =================================================
-
-            const userRole =
-                String(
-                    data.user.role || ""
-                )
-                    .trim()
-                    .toLowerCase();
-
-
-            console.log(
-                "Logged in role:",
-                userRole
-            );
-
-
-            // =================================================
-            // BLOCK EMPLOYEE FROM ADMIN PANEL
-            // =================================================
-
-            if (
-                userRole !== "admin"
-            ) {
-
-                console.error(
-                    "Employee attempted admin login:",
-                    data.user
-                );
-
-
-                // IMPORTANT:
-                // Only clear ADMIN session.
-                // DO NOT touch employee session.
-
-                sessionStorage.removeItem(
-                    "adminToken"
-                );
-
-                sessionStorage.removeItem(
-                    "adminUser"
-                );
-
-                sessionStorage.removeItem(
-                    "adminUserId"
-                );
-
-                sessionStorage.removeItem(
-                    "adminUserEmail"
-                );
-
-                sessionStorage.removeItem(
-                    "adminUserRole"
-                );
-
-                sessionStorage.removeItem(
-                    "adminAuthenticated"
-                );
-
-
-                setError(
-                    "This account does not have administrator access."
-                );
-
-                return;
-            }
-
-
-            // =================================================
-            // CREATE ADMIN OBJECT
-            // =================================================
-
-            const adminId =
-                data.user.id ||
-                data.user._id;
-
-
-            const adminEmail =
-                data.user.email ||
-                email;
-
-
-            const adminName =
-                data.user.fullName ||
-                data.user.name ||
-                "Administrator";
-
-
-            const adminUser = {
-
-                id: adminId,
-
-                _id:
-                    data.user._id ||
-                    data.user.id,
-
-                name:
-                    adminName,
-
-                fullName:
-                    adminName,
-
-                email:
-                    adminEmail,
-
-                role: "admin",
-
-                isDefault:
-                    false,
-
-                isActive: true,
-
-                isApproved: true,
-
-                permissions: [
-                    "dashboard",
-                    "employees",
-                    "projects",
-                ],
-            };
-
-
-            // =================================================
-            // SAVE ADMIN JWT
-            // =================================================
-
-            // IMPORTANT:
-            //
-            // Admin uses:
-            // sessionStorage -> adminToken
-            //
-            // Employee uses:
-            // sessionStorage -> employeeToken
-            //
-            // NEVER use:
-            // localStorage.token
-            // localStorage.user
-            // localStorage.userId
-            //
-            // This keeps both sessions independent.
-
-            sessionStorage.setItem(
-                "adminToken",
-                data.token
-            );
-
-
-            // =================================================
-            // SAVE ADMIN USER
-            // =================================================
-
-            sessionStorage.setItem(
-                "adminUser",
-                JSON.stringify(
-                    adminUser
-                )
-            );
-
-
-            sessionStorage.setItem(
-                "adminUserId",
-                String(adminId)
-            );
-
-
-            sessionStorage.setItem(
-                "adminUserEmail",
-                adminEmail
-            );
-
-
-            sessionStorage.setItem(
-                "adminUserRole",
-                "admin"
-            );
-
-
-            sessionStorage.setItem(
-                "adminAuthenticated",
-                "true"
-            );
-
-
-            // =================================================
-            // SAVE CURRENT ADMIN FOR ADMIN CONTEXT
-            // =================================================
-
-            sessionStorage.setItem(
-                "skillmatrix_current_admin",
-                JSON.stringify(
-                    adminUser
-                )
-            );
-
-
-            // =================================================
-            // CLEAN OLD ADMIN STORAGE
-            // =================================================
-
-            // Remove old admin values if they exist.
-            // These are NOT used for employee authentication.
-
-            localStorage.removeItem(
-                "skillmatrix_current_admin"
-            );
-
-            localStorage.removeItem(
-                "adminToken"
-            );
-
-            localStorage.removeItem(
-                "adminUser"
-            );
-
-            localStorage.removeItem(
-                "adminUserId"
-            );
-
-            localStorage.removeItem(
-                "adminUserEmail"
-            );
-
-            localStorage.removeItem(
-                "adminUserRole"
-            );
-
-            localStorage.removeItem(
-                "adminAuthenticated"
-            );
-
-
-            // =================================================
-            // SUCCESS
-            // =================================================
-
-            console.log(
-                "================================="
-            );
-
-            console.log(
-                "ADMIN LOGIN SUCCESS"
-            );
-
-            console.log(
-                "Admin Email:",
-                adminEmail
-            );
-
-            console.log(
-                "Admin Role:",
-                userRole
-            );
-
-            console.log(
-                "Admin JWT saved in sessionStorage"
-            );
-
-            console.log(
-                "================================="
-            );
-
-
-            // =================================================
-            // REDIRECT TO ADMIN DASHBOARD
-            // =================================================
-
-            navigate(
-                "/admin/dashboard",
-                {
-                    replace: true,
-                }
-            );
-
-
-        } catch (error) {
-
-            console.error(
-                "================================="
-            );
-
-            console.error(
-                "ADMIN LOGIN ERROR"
-            );
-
-            console.error(
-                "Status:",
-                error?.response?.status
-            );
-
-            console.error(
-                "Response:",
-                error?.response?.data
-            );
-
-            console.error(
-                "Error:",
-                error
-            );
-
-            console.error(
-                "================================="
-            );
-
-
-            // =================================================
-            // ERROR MESSAGE
-            // =================================================
-
-            if (
-                error?.response?.status === 401
-            ) {
-
-                setError(
-                    error?.response?.data?.message ||
-                    "Invalid admin email or password."
-                );
-
-            } else if (
-                error?.response?.status === 403
-            ) {
-
-                setError(
-                    error?.response?.data?.message ||
-                    "Administrator access is not allowed."
-                );
-
-            } else if (
-                error?.response?.status === 400
-            ) {
-
-                setError(
-                    error?.response?.data?.message ||
-                    "Please check your login details."
-                );
-
-            } else if (
-                error?.response?.status >= 500
-            ) {
-
-                setError(
-                    error?.response?.data?.message ||
-                    "Server error. Please try again later."
-                );
-
-            } else {
-
-                setError(
-                    error?.response?.data?.message ||
-                    "Unable to connect to the server."
-                );
-            }
-
+            // AdminContext already saves currentAdmin in localStorage.
+            // Do not overwrite it with a separate session object.
+            navigate("/admin/dashboard", {
+                replace: true,
+            });
+        } catch (err) {
+            console.error("Administrator login error:", err);
+            setError("Something went wrong. Please try again.");
         } finally {
-
-            setLoading(false);
+            setSubmitting(false);
         }
     };
 
-
-    // =========================================================
-    // PAGE
-    // =========================================================
+    const isLoading = submitting || adminLoading;
 
     return (
+        <div className="
+            min-h-screen
+            bg-gradient-to-br
+            from-slate-100
+            via-white
+            to-blue-50
+            flex
+            items-center
+            justify-center
+            px-4
+            py-8
+        ">
+            <div className="
+                w-full
+                max-w-5xl
+                overflow-hidden
+                rounded-3xl
+                bg-white
+                shadow-2xl
+                border
+                border-slate-100
+            ">
+                <div className="grid md:grid-cols-2">
 
-        <div
-            className="
-                min-h-screen
-                bg-linear-to-br
-                from-slate-100
-                via-white
-                to-blue-50
-                flex
-                items-center
-                justify-center
-                px-4
-                py-8
-            "
-        >
-
-            <div
-                className="
-                    w-full
-                    max-w-5xl
-                    overflow-hidden
-                    rounded-3xl
-                    bg-white
-                    shadow-2xl
-                    border
-                    border-slate-100
-                "
-            >
-
-                <div
-                    className="
-                        grid
-                        md:grid-cols-2
-                    "
-                >
-
-                    {/* =================================================
-                        LEFT SIDE
-                    ================================================= */}
-
-                    <div
-                        className="
-                            hidden
-                            md:flex
-                            flex-col
-                            justify-between
-                            bg-sky-700
-                            p-10
-                            text-white
-                        "
-                    >
-
+                    {/* LEFT SIDE */}
+                    <div className="
+                        hidden
+                        md:flex
+                        flex-col
+                        justify-between
+                        bg-sky-700
+                        p-10
+                        text-white
+                    ">
                         <div>
-
-                            <div
-                                className="
-                                    mb-10
-                                    flex
-                                    items-center
-                                    gap-3
-                                "
-                            >
-
+                            <div className="mb-10 flex items-center gap-3">
                                 <img
                                     src="/pcs_logo.jpg"
                                     alt="PCS Global"
-                                    className="
-                                        h-20
-                                        w-20
-                                        rounded-full
-                                        object-contain
-                                    "
+                                    className="h-20 w-20 rounded-full object-contain"
                                 />
 
                                 <div>
-
-                                    <h1
-                                        className="
-                                            text-xl
-                                            font-bold
-                                        "
-                                    >
+                                    <h1 className="text-xl font-bold">
                                         SkillMatrix
                                     </h1>
-
-                                    <p
-                                        className="
-                                            text-sm
-                                            text-slate-200
-                                        "
-                                    >
+                                    <p className="text-sm text-slate-200">
                                         Administration Portal
                                     </p>
-
                                 </div>
-
                             </div>
 
-
-                            <h2
-                                className="
-                                    text-4xl
-                                    font-bold
-                                    leading-tight
-                                "
-                            >
-                                Welcome to the
-                                Administration Portal
+                            <h2 className="
+                                text-4xl
+                                font-bold
+                                leading-tight
+                            ">
+                                Welcome to the Administration Portal
                             </h2>
 
-
-                            <p
-                                className="
-                                    mt-5
-                                    leading-7
-                                    text-slate-200
-                                "
-                            >
-                                Manage employees, projects,
-                                assignments and other
-                                SkillMatrix administration
-                                features from one secure
-                                dashboard.
+                            <p className="mt-5 leading-7 text-slate-200">
+                                Manage employees, projects, assignments
+                                and other SkillMatrix administration
+                                features from one secure dashboard.
                             </p>
-
                         </div>
 
-
-                        <div
-                            className="
-                                space-y-4
-                                text-sm
-                                text-slate-200
-                            "
-                        >
-
-                            <div>
-                                ✓ Employee Management
-                            </div>
-
-                            <div>
-                                ✓ Project Management
-                            </div>
-
-                            <div>
-                                ✓ Team Assignment
-                            </div>
-
-                            <div>
-                                ✓ Secure Administrator Access
-                            </div>
-
+                        <div className="space-y-4 text-sm text-slate-200">
+                            <div>✓ Employee Management</div>
+                            <div>✓ Project Management</div>
+                            <div>✓ Team Assignment</div>
+                            <div>✓ Administrator Access</div>
                         </div>
-
                     </div>
 
-
-                    {/* =================================================
-                        RIGHT SIDE
-                    ================================================= */}
-
-                    <div
-                        className="
-                            p-6
-                            sm:p-10
-                        "
-                    >
+                    {/* RIGHT SIDE */}
+                    <div className="p-6 sm:p-10">
 
                         {/* MOBILE LOGO */}
-
-                        <div
-                            className="
-                                mb-8
-                                text-center
-                                md:hidden
-                            "
-                        >
-
+                        <div className="mb-8 text-center md:hidden">
                             <img
-                                src="/pcs_logo.png"
+                                src="/pcs_logo.jpg"
                                 alt="PCS Global"
                                 className="
                                     mx-auto
@@ -771,131 +179,78 @@ const AdminLogin = () => {
                                 "
                             />
 
-
-                            <h1
-                                className="
-                                    mt-2
-                                    text-2xl
-                                    font-bold
-                                    text-slate-900
-                                "
-                            >
+                            <h1 className="
+                                mt-2
+                                text-2xl
+                                font-bold
+                                text-slate-900
+                            ">
                                 SkillMatrix
                             </h1>
-
                         </div>
 
-
-                        {/* =================================================
-                            HEADER
-                        ================================================= */}
-
-                        <div
-                            className="mb-7"
-                        >
-
-                            <span
-                                className="
-                                    inline-flex
-                                    items-center
-                                    gap-2
+                        {/* HEADER */}
+                        <div className="mb-7">
+                            <span className="
+                                inline-flex
+                                items-center
+                                gap-2
+                                rounded-full
+                                bg-blue-50
+                                px-3
+                                py-1.5
+                                text-xs
+                                font-semibold
+                                text-blue-600
+                            ">
+                                <span className="
+                                    h-2
+                                    w-2
                                     rounded-full
-                                    bg-blue-50
-                                    px-3
-                                    py-1.5
-                                    text-xs
-                                    font-semibold
-                                    text-blue-600
-                                "
-                            >
-
-                                <span
-                                    className="
-                                        h-2
-                                        w-2
-                                        rounded-full
-                                        bg-blue-500
-                                    "
-                                />
-
+                                    bg-blue-500
+                                " />
                                 ADMINISTRATOR
-
                             </span>
 
-
-                            <h2
-                                className="
-                                    mt-4
-                                    text-3xl
-                                    font-bold
-                                    text-sky-800
-                                "
-                            >
+                            <h2 className="
+                                mt-4
+                                text-3xl
+                                font-bold
+                                text-sky-800
+                            ">
                                 Admin Login
                             </h2>
 
-
-                            <p
-                                className="
-                                    mt-2
-                                    text-sm
-                                    text-slate-600
-                                "
-                            >
-                                Sign in to access the
-                                SkillMatrix administration
-                                portal.
+                            <p className="mt-2 text-sm text-slate-600">
+                                Sign in to access the SkillMatrix
+                                administration portal.
                             </p>
-
                         </div>
 
-
-                        {/* =================================================
-                            ERROR
-                        ================================================= */}
-
+                        {/* ERROR MESSAGE */}
                         {error && (
-
-                            <div
-                                className="
-                                    mb-5
-                                    rounded-xl
-                                    border
-                                    border-red-200
-                                    bg-red-50
-                                    px-4
-                                    py-3
-                                "
-                            >
-
-                                <p
-                                    className="
-                                        text-sm
-                                        font-medium
-                                        text-red-700
-                                    "
-                                >
+                            <div className="
+                                mb-5
+                                rounded-xl
+                                border
+                                border-red-200
+                                bg-red-50
+                                px-4
+                                py-3
+                            ">
+                                <p className="text-sm font-medium text-red-700">
                                     {error}
                                 </p>
-
                             </div>
-
                         )}
 
-
-                        {/* =================================================
-                            FORM
-                        ================================================= */}
-
+                        {/* LOGIN FORM */}
                         <form
                             onSubmit={handleSubmit}
                             className="space-y-5"
                         >
-
                             {/* EMAIL */}
-
                             <div>
-
                                 <label
                                     htmlFor="admin-email"
                                     className="
@@ -909,7 +264,6 @@ const AdminLogin = () => {
                                     Admin Email
                                 </label>
 
-
                                 <input
                                     id="admin-email"
                                     type="email"
@@ -918,7 +272,7 @@ const AdminLogin = () => {
                                     onChange={handleChange}
                                     placeholder="Enter admin email"
                                     autoComplete="username"
-                                    disabled={loading}
+                                    disabled={isLoading}
                                     required
                                     className="
                                         w-full
@@ -936,14 +290,10 @@ const AdminLogin = () => {
                                         disabled:bg-slate-100
                                     "
                                 />
-
                             </div>
 
-
                             {/* PASSWORD */}
-
                             <div>
-
                                 <label
                                     htmlFor="admin-password"
                                     className="
@@ -957,26 +307,16 @@ const AdminLogin = () => {
                                     Password
                                 </label>
 
-
-                                <div
-                                    className="
-                                        relative
-                                    "
-                                >
-
+                                <div className="relative">
                                     <input
                                         id="admin-password"
-                                        type={
-                                            showPassword
-                                                ? "text"
-                                                : "password"
-                                        }
+                                        type={showPassword ? "text" : "password"}
                                         name="password"
                                         value={formData.password}
                                         onChange={handleChange}
                                         placeholder="Enter admin password"
                                         autoComplete="current-password"
-                                        disabled={loading}
+                                        disabled={isLoading}
                                         required
                                         className="
                                             w-full
@@ -996,41 +336,37 @@ const AdminLogin = () => {
                                         "
                                     />
 
-
                                     <button
                                         type="button"
                                         onClick={() =>
-                                            setShowPassword(
-                                                (prev) =>
-                                                    !prev
-                                            )
+                                            setShowPassword((prev) => !prev)
                                         }
                                         className="
                                             absolute
                                             right-3
                                             top-1/2
                                             -translate-y-1/2
-                                            text-lg
                                             text-slate-500
                                             hover:text-blue-600
                                         "
-                                        tabIndex={-1}
+                                        aria-label={
+                                            showPassword
+                                                ? "Hide password"
+                                                : "Show password"
+                                        }
                                     >
                                         {showPassword
                                             ? <EyeOff size={20} />
-                                            : <Eye size={20} />}
+                                            : <Eye size={20} />
+                                        }
                                     </button>
-
                                 </div>
-
                             </div>
 
-
                             {/* LOGIN BUTTON */}
-
                             <button
                                 type="submit"
-                                disabled={loading}
+                                disabled={isLoading}
                                 className="
                                     w-full
                                     rounded-xl
@@ -1047,76 +383,45 @@ const AdminLogin = () => {
                                     disabled:opacity-60
                                 "
                             >
-
-                                {loading
+                                {isLoading
                                     ? "Signing in..."
-                                    : "Admin Login"}
-
+                                    : "Admin Login"
+                                }
                             </button>
-
                         </form>
 
-
-                        {/* =================================================
-                            SECURITY MESSAGE
-                        ================================================= */}
-
-                        <div
-                            className="
-                                mt-6
-                                rounded-xl
-                                border
-                                border-blue-100
-                                bg-blue-50
-                                p-4
-                            "
-                        >
-
-                            <p
-                                className="
-                                    text-sm
-                                    font-semibold
-                                    text-blue-800
-                                "
-                            >
+                        {/* SECURITY MESSAGE */}
+                        <div className="
+                            mt-6
+                            rounded-xl
+                            border
+                            border-blue-100
+                            bg-blue-50
+                            p-4
+                        ">
+                            <p className="
+                                text-sm
+                                font-semibold
+                                text-blue-800
+                            ">
                                 🔒 Secure Administrator Access
                             </p>
 
-
-                            <p
-                                className="
-                                    mt-1
-                                    text-xs
-                                    leading-5
-                                    text-blue-600
-                                "
-                            >
-                                Only authorized administrator
-                                accounts can access this portal.
+                            <p className="
+                                mt-1
+                                text-xs
+                                leading-5
+                                text-blue-600
+                            ">
+                                Only authorized administrator accounts
+                                can access this portal.
                             </p>
-
                         </div>
 
-
-                        {/* =================================================
-                            EMPLOYEE LOGIN
-                        ================================================= */}
-
-                        <div
-                            className="
-                                mt-7
-                                text-center
-                            "
-                        >
-
-                            <p
-                                className="
-                                    text-sm
-                                    text-slate-500
-                                "
-                            >
+                        {/* EMPLOYEE LOGIN */}
+                        <div className="mt-7 text-center">
+                            <p className="text-sm text-slate-500">
                                 Are you an employee?{" "}
-
                                 <Link
                                     to="/login"
                                     className="
@@ -1127,23 +432,11 @@ const AdminLogin = () => {
                                 >
                                     Employee Login
                                 </Link>
-
                             </p>
-
                         </div>
 
-
-                        {/* =================================================
-                            HOME
-                        ================================================= */}
-
-                        <div
-                            className="
-                                mt-4
-                                text-center
-                            "
-                        >
-
+                        {/* HOME */}
+                        <div className="mt-4 text-center">
                             <Link
                                 to="/"
                                 className="
@@ -1154,18 +447,13 @@ const AdminLogin = () => {
                             >
                                 ← Back to Home
                             </Link>
-
                         </div>
 
                     </div>
-
                 </div>
-
             </div>
-
         </div>
     );
 };
-
 
 export default AdminLogin;
